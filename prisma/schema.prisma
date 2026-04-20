@@ -1,0 +1,314 @@
+generator client {
+  provider = "prisma-client-js"
+}
+
+datasource db {
+  provider = "postgresql"
+}
+
+// ----------------------------------------------------------------------------
+// 1. SYSTEM LOGS & METADATA
+// ----------------------------------------------------------------------------
+model AuditLog {
+  id         String   @id @default(cuid())
+  action     String // e.g., "CREATE", "UPDATE", "APPROVE", "REJECT"
+  entityType String // e.g., "AlumniProfile", "MasterData"
+  entityId   String
+  changes    Json? // Detailed changes (before/after)
+  userId     String? // Who made the change (Admin or Alumni)
+  createdAt  DateTime @default(now())
+}
+
+// ----------------------------------------------------------------------------
+// 2. MASTER DATA (Dynamic Configurations)
+// ----------------------------------------------------------------------------
+model MasterData {
+  id          String   @id @default(cuid())
+  category    Category // Using enum for strict categories
+  name        String
+  description String?
+  isActive    Boolean  @default(true)
+  order       Int      @default(0) // For sorting options
+  createdAt   DateTime @default(now())
+  updatedAt   DateTime @updatedAt
+
+  // Relations to AlumniProfile
+  profilesAsMaritalStatus    AlumniProfile[] @relation("MaritalStatus")
+  profilesAsEntryLevel       AlumniProfile[] @relation("EntryLevel")
+  profilesAsGraduationStatus AlumniProfile[] @relation("GraduationStatus")
+  profilesAsCollegeLevel     AlumniProfile[] @relation("CollegeLevel")
+  profilesAsMajor            AlumniProfile[] @relation("Major")
+  profilesAsCollegeStatus    AlumniProfile[] @relation("CollegeStatus")
+  profilesAsJobStatus        AlumniProfile[] @relation("JobStatus")
+  profilesAsUniversity       AlumniProfile[] @relation("University")
+
+  // Pending profile revisions
+  revisionsAsMaritalStatus    ProfileRevision[] @relation("RevMaritalStatus")
+  revisionsAsEntryLevel       ProfileRevision[] @relation("RevEntryLevel")
+  revisionsAsGraduationStatus ProfileRevision[] @relation("RevGraduationStatus")
+  revisionsAsCollegeLevel     ProfileRevision[] @relation("RevCollegeLevel")
+  revisionsAsMajor            ProfileRevision[] @relation("RevMajor")
+  revisionsAsCollegeStatus    ProfileRevision[] @relation("RevCollegeStatus")
+  revisionsAsJobStatus        ProfileRevision[] @relation("RevJobStatus")
+  revisionsAsUniversity       ProfileRevision[] @relation("RevUniversity")
+
+  @@unique([category, name])
+}
+
+enum Category {
+  MARITAL_STATUS
+  ENTRY_LEVEL
+  GRADUATION_STATUS
+  COLLEGE_LEVEL
+  COLLEGE_MAJOR
+  COLLEGE_STATUS
+  JOB_STATUS
+  UNIVERSITY
+  APPROVER_EMAIL
+  DOMESTIC_PROVINCE
+  DOMESTIC_CITY
+  FOREIGN_COUNTRY
+  CITIZENSHIP
+}
+
+// ----------------------------------------------------------------------------
+// 3. USERS (NextAuth/Supabase)
+// ----------------------------------------------------------------------------
+model User {
+  id            String    @id @default(cuid())
+  name          String?
+  email         String    @unique
+  emailVerified DateTime?
+  image         String?
+  passwordHash  String? // For basic Auth (Reset Password flow)
+  role          UserRole  @default(ALUMNI)
+
+  profile   AlumniProfile?
+  revisions ProfileRevision[]
+
+  createdAt DateTime @default(now())
+  updatedAt DateTime @updatedAt
+
+  notifications Notification[]
+  news          News[]           @relation("UserNews")
+}
+
+enum UserRole {
+  SUPERUSER
+  ADMIN
+  ALUMNI
+}
+
+// ----------------------------------------------------------------------------
+// 4. ALUMNI PROFILES & WORKFLOW
+// ----------------------------------------------------------------------------
+enum HighestEducation {
+  SMP_7
+  SMP_8
+  SMP_9
+  SMA_10
+  SMA_11
+  SMA_12
+}
+
+enum ActivityStatus {
+  COLLEGE
+  WORKING
+  COLLEGE_AND_WORKING
+  GRADUATED_AND_WORKING
+}
+
+enum DomisiliType {
+  DOMESTIC
+  FOREIGN
+}
+
+model AlumniProfile {
+  id     String @id @default(cuid())
+  userId String @unique
+  user   User   @relation(fields: [userId], references: [id], onDelete: Cascade)
+
+  // Base State (For approval logic)
+  status ApprovalStatus @default(DRAFT) // WAITING, APPROVED, REJECTED
+
+  // ==========================================
+  // A. Data Pribadi (Personal Data)
+  // ==========================================
+  fullName        String
+  phoneNumber     String?
+  maritalStatusId String?
+  maritalStatus   MasterData? @relation("MaritalStatus", fields: [maritalStatusId], references: [id])
+  citizenship     String?
+
+  // ==========================================
+  // B. Data Kealumnian (Alumni Data)
+  // ==========================================
+  startYear          Int?
+  graduationYear     String?
+  highestEducation   HighestEducation?
+  entryLevelId       String?
+  entryLevel         MasterData?       @relation("EntryLevel", fields: [entryLevelId], references: [id])
+  graduationStatusId String?
+  graduationStatus   MasterData?       @relation("GraduationStatus", fields: [graduationStatusId], references: [id])
+
+  // ==========================================
+  // C. Domisili Utama (Main Domicile)
+  // ==========================================
+  domicileType DomisiliType?
+
+  // C1. Domestic
+  provinceId String?
+  cityId     String?
+  provinceName String?
+  cityName     String?
+
+  // C2. Foreign
+  countryId String?
+  stateId   String?
+  countryName String?
+  stateName   String?
+
+  // Lat Long for Map Plotting (Derived from Domisili)
+  latitude  Float?
+  longitude Float?
+
+  // ==========================================
+  // D. Kegiatan Saat Ini (Current Activity)
+  // ==========================================
+  activityStatus ActivityStatus?
+
+  // D1. Kuliah (College)
+  collegeDomicileType DomisiliType?
+  collegeLevelId      String?
+  collegeLevel        MasterData?   @relation("CollegeLevel", fields: [collegeLevelId], references: [id])
+  universityId        String?
+  university          MasterData?   @relation("University", fields: [universityId], references: [id])
+  otherUniversity     String?
+  majorId             String?
+  major               MasterData?   @relation("Major", fields: [majorId], references: [id])
+  otherMajor          String?
+  collegeStatusId     String?
+  collegeStatus       MasterData?   @relation("CollegeStatus", fields: [collegeStatusId], references: [id])
+
+  // D2. Bekerja (Work)
+  companyName String?
+  jobStatusId String?
+  jobStatus   MasterData? @relation("JobStatus", fields: [jobStatusId], references: [id])
+  jobPosition String?
+  rejectionNotes String?
+
+  createdAt DateTime @default(now())
+  updatedAt DateTime @updatedAt
+
+  // One-to-many: Revisions
+  revisions ProfileRevision[]
+}
+
+// ----------------------------------------------------------------------------
+// 5. PROFILE REVISIONS (Edit Requests)
+// ----------------------------------------------------------------------------
+enum ApprovalStatus {
+  DRAFT
+  WAITING
+  APPROVED
+  REJECTED
+}
+
+model ProfileRevision {
+  id        String        @id @default(cuid())
+  profileId String
+  profile   AlumniProfile @relation(fields: [profileId], references: [id], onDelete: Cascade)
+  userId    String
+  user      User          @relation(fields: [userId], references: [id], onDelete: Cascade)
+
+  status     ApprovalStatus @default(WAITING)
+  adminNotes String? // Reason for rejection
+
+  // MIRROR FIELDS OF ALUMNI PROFILE
+  fullName        String?
+  phoneNumber     String?
+  maritalStatusId String?
+  maritalStatus   MasterData? @relation("RevMaritalStatus", fields: [maritalStatusId], references: [id])
+  citizenship     String?
+
+  startYear          Int?
+  graduationYear     String?
+  highestEducation   HighestEducation?
+  entryLevelId       String?
+  entryLevel         MasterData?       @relation("RevEntryLevel", fields: [entryLevelId], references: [id])
+  graduationStatusId String?
+  graduationStatus   MasterData?       @relation("RevGraduationStatus", fields: [graduationStatusId], references: [id])
+
+  domicileType DomisiliType?
+  provinceId   String?
+  cityId       String?
+  provinceName String?
+  cityName     String?
+  countryId    String?
+  stateId      String?
+  countryName  String?
+  stateName    String?
+  latitude     Float?
+  longitude    Float?
+
+  activityStatus      ActivityStatus?
+  collegeDomicileType DomisiliType?
+  collegeLevelId      String?
+  collegeLevel        MasterData?     @relation("RevCollegeLevel", fields: [collegeLevelId], references: [id])
+  universityId        String?
+  university          MasterData?     @relation("RevUniversity", fields: [universityId], references: [id])
+  otherUniversity     String?
+  majorId             String?
+  major               MasterData?     @relation("RevMajor", fields: [majorId], references: [id])
+  otherMajor          String?
+  collegeStatusId     String?
+  collegeStatus       MasterData?     @relation("RevCollegeStatus", fields: [collegeStatusId], references: [id])
+
+  companyName String?
+  jobStatusId String?
+  jobStatus   MasterData? @relation("RevJobStatus", fields: [jobStatusId], references: [id])
+  jobPosition String?
+
+  createdAt DateTime @default(now())
+  updatedAt DateTime @updatedAt
+}
+
+// ----------------------------------------------------------------------------
+// 6. NOTIFICATIONS
+// ----------------------------------------------------------------------------
+model Notification {
+  id        String   @id @default(cuid())
+  userId    String?  // Recipient (null for system-wide/admin notifications)
+  user      User?    @relation(fields: [userId], references: [id], onDelete: Cascade)
+  title     String
+  message   String
+  type      NotificationType @default(INFO)
+  isRead    Boolean  @default(false)
+  link      String?  // Optional link to redirect
+  createdAt DateTime @default(now())
+}
+
+enum NotificationType {
+  INFO
+  SUCCESS
+  WARNING
+  DANGER
+  APPROVAL_REQUEST
+}
+
+// ----------------------------------------------------------------------------
+// 7. NEWS / ARTICLES
+// ----------------------------------------------------------------------------
+model News {
+  id          String   @id @default(cuid())
+  title       String
+  slug        String   @unique
+  content     String   @db.Text
+  image       String?  // Cover image URL
+  isPublished Boolean  @default(true)
+  authorId    String
+  author      User     @relation("UserNews", fields: [authorId], references: [id])
+  createdAt   DateTime @default(now())
+  updatedAt   DateTime @updatedAt
+}
+
