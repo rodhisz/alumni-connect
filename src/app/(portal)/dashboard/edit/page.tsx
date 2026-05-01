@@ -36,6 +36,7 @@ export default async function EditProfilePage() {
     phoneNumber: profile.phoneNumber || "",
     maritalStatusId: profile.maritalStatusId || "",
     citizenship: profile.citizenship || "",
+    isMale: profile.isMale !== undefined ? profile.isMale : true,
     startYear: profile.startYear?.toString() || "",
     graduationYear: profile.graduationYear || "",
     highestEducation: profile.highestEducation || "",

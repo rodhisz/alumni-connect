@@ -88,14 +88,15 @@ export async function approveRevision(id: string) {
         rejectionNotes: null,
         fullName: revision.fullName || revision.profile.fullName,
         phoneNumber: revision.phoneNumber,
-        maritalStatusId: revision.maritalStatusId,
+        maritalStatus: revision.maritalStatusId ? { connect: { id: revision.maritalStatusId } } : { disconnect: true },
         citizenship: revision.citizenship,
+        isMale: revision.isMale !== null ? revision.isMale : revision.profile.isMale,
         
         startYear: revision.startYear,
         graduationYear: revision.graduationYear,
         highestEducation: revision.highestEducation,
-        entryLevelId: revision.entryLevelId,
-        graduationStatusId: revision.graduationStatusId,
+        entryLevel: revision.entryLevelId ? { connect: { id: revision.entryLevelId } } : { disconnect: true },
+        graduationStatus: revision.graduationStatusId ? { connect: { id: revision.graduationStatusId } } : { disconnect: true },
         
         domicileType: revision.domicileType,
         provinceId: revision.provinceId,
@@ -109,17 +110,17 @@ export async function approveRevision(id: string) {
         
         activityStatus: revision.activityStatus,
         collegeDomicileType: revision.collegeDomicileType,
-        collegeLevelId: revision.collegeLevelId,
-        universityId: revision.universityId,
+        collegeLevel: revision.collegeLevelId ? { connect: { id: revision.collegeLevelId } } : { disconnect: true },
+        university: revision.universityId ? { connect: { id: revision.universityId } } : { disconnect: true },
         otherUniversity: revision.otherUniversity,
-        majorId: revision.majorId,
+        major: revision.majorId ? { connect: { id: revision.majorId } } : { disconnect: true },
         otherMajor: revision.otherMajor,
-        collegeStatusId: revision.collegeStatusId,
+        collegeStatus: revision.collegeStatusId ? { connect: { id: revision.collegeStatusId } } : { disconnect: true },
         
         companyName: revision.companyName,
-        jobStatusId: revision.jobStatusId,
+        jobStatus: revision.jobStatusId ? { connect: { id: revision.jobStatusId } } : { disconnect: true },
         jobPosition: revision.jobPosition,
-      }
+      } as any
     })
 
     // Mark revision as APPROVED

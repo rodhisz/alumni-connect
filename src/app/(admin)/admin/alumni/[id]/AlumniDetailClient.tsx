@@ -10,7 +10,7 @@ import {
 import { useLanguage } from "@/components/Providers"
 import { EDUCATION_LABELS } from "@/lib/constants"
 
-export default function AlumniDetailClient({ id, user, role }: { id: string, user: any, role: string }) {
+export default function AlumniDetailClient({ id, user, role, currentUserId }: { id: string, user: any, role: string, currentUserId?: string }) {
   const { t, lang } = useLanguage()
   const isAdmin = role === "SUPERUSER" || role === "ADMIN"
   const isAlumni = role === "ALUMNI"
@@ -48,28 +48,28 @@ export default function AlumniDetailClient({ id, user, role }: { id: string, use
     <div className="p-4 md:p-10 max-w-7xl mx-auto pb-32">
       {/* Top Navigation */}
       <div className="flex items-center justify-between mb-8">
-        {isAdmin ? (
-          <Link 
-            href="/admin/alumni" 
-            className="group flex items-center gap-3 text-zinc-400 hover:text-zinc-900 dark:hover:text-white transition-all"
-          >
-            <div className="p-2 rounded-full border border-zinc-200 dark:border-zinc-800 group-hover:bg-zinc-100 dark:group-hover:bg-zinc-800 transition-colors">
-              <ChevronLeft size={20} />
-            </div>
-            <span className="font-bold text-sm tracking-tight">
-              {lang === "id" ? "Kembali ke Daftar" : "Back to Directory"}
-            </span>
-          </Link>
-        ) : <div />}
-        
         <Link 
-          href={`/admin/alumni/${id}/edit`}
-          className="relative group overflow-hidden flex items-center gap-2 bg-zinc-900 dark:bg-white text-white dark:text-zinc-900 px-8 py-3.5 rounded-2xl font-bold text-sm transition-all shadow-2xl shadow-zinc-500/20 active:scale-95"
+          href="/admin/alumni" 
+          className="group flex items-center gap-3 text-zinc-400 hover:text-zinc-900 dark:hover:text-white transition-all"
         >
-          <div className="absolute inset-0 bg-gradient-to-r from-blue-600 to-indigo-600 opacity-0 group-hover:opacity-100 transition-opacity" />
-          <Edit size={18} className="relative z-10" />
-          <span className="relative z-10">{lang === "id" ? "Sunting Profil" : "Edit Profile"}</span>
+          <div className="p-2 rounded-full border border-zinc-200 dark:border-zinc-800 group-hover:bg-zinc-100 dark:group-hover:bg-zinc-800 transition-colors">
+            <ChevronLeft size={20} />
+          </div>
+          <span className="font-bold text-sm tracking-tight">
+            {lang === "id" ? "Kembali ke Daftar" : "Back to Directory"}
+          </span>
         </Link>
+        
+        {(isAdmin || currentUserId === id) && (
+          <Link 
+            href={`/admin/alumni/${id}/edit`}
+            className="relative group overflow-hidden flex items-center gap-2 bg-zinc-900 dark:bg-white text-white dark:text-zinc-900 px-8 py-3.5 rounded-2xl font-bold text-sm transition-all shadow-2xl shadow-zinc-500/20 active:scale-95"
+          >
+            <div className="absolute inset-0 bg-gradient-to-r from-blue-600 to-indigo-600 opacity-0 group-hover:opacity-100 transition-opacity" />
+            <Edit size={18} className="relative z-10" />
+            <span className="relative z-10">{lang === "id" ? "Sunting Profil" : "Edit Profile"}</span>
+          </Link>
+        )}
       </div>
 
       {/* Alumni Status Flag/Banner */}
@@ -105,14 +105,14 @@ export default function AlumniDetailClient({ id, user, role }: { id: string, use
         {/* Left Profile Sidebar */}
         <div className="lg:col-span-4 space-y-8">
           <div className="relative group">
-            <div className="absolute -inset-1 bg-gradient-to-r from-blue-500 to-indigo-500 rounded-[2.5rem] blur opacity-20 group-hover:opacity-40 transition duration-1000 group-hover:duration-200"></div>
+            <div className={`absolute -inset-1 bg-gradient-to-r ${profile?.isMale ? 'from-blue-500 to-indigo-500' : 'from-pink-400 to-rose-400'} rounded-[2.5rem] blur opacity-20 group-hover:opacity-40 transition duration-1000 group-hover:duration-200`}></div>
             <div className="relative glass-premium p-10 rounded-[2.5rem] text-center border border-white/50 dark:border-zinc-800 bg-white/80 dark:bg-zinc-900/80 shadow-2xl overflow-hidden">
                {/* Decorative Background */}
-               <div className="absolute -top-20 -right-20 w-40 h-40 bg-blue-500/10 rounded-full blur-3xl" />
-               <div className="absolute -bottom-20 -left-20 w-40 h-40 bg-indigo-500/10 rounded-full blur-3xl" />
+               <div className={`absolute -top-20 -right-20 w-40 h-40 ${profile?.isMale ? 'bg-blue-500/10' : 'bg-pink-500/10'} rounded-full blur-3xl`} />
+               <div className={`absolute -bottom-20 -left-20 w-40 h-40 ${profile?.isMale ? 'bg-indigo-500/10' : 'bg-rose-500/10'} rounded-full blur-3xl`} />
                
                <div className="relative inline-block mb-6">
-                 <div className="w-32 h-32 rounded-[2.5rem] bg-gradient-to-br from-blue-500 to-indigo-600 p-1 shadow-2xl rotate-3 group-hover:rotate-6 transition-transform duration-500">
+                 <div className={`w-32 h-32 rounded-[2.5rem] bg-gradient-to-br ${profile?.isMale ? 'from-blue-500 to-indigo-600' : 'from-pink-400 to-rose-500'} p-1 shadow-2xl rotate-3 group-hover:rotate-6 transition-transform duration-500`}>
                     <div className="w-full h-full rounded-[2.3rem] bg-white dark:bg-zinc-900 flex items-center justify-center text-5xl font-black font-outfit text-zinc-900 dark:text-white">
                       {user.name?.[0] || "?"}
                     </div>
@@ -152,6 +152,7 @@ export default function AlumniDetailClient({ id, user, role }: { id: string, use
 
           <div className="grid grid-cols-1 gap-4">
             <InfoCard icon={UserCircle} title={lang === "id" ? "Nama Lengkap" : "Full Name"} value={profile?.fullName} colorClass="text-indigo-500 bg-indigo-50" />
+            <InfoCard icon={UserCircle} title={lang === "id" ? "Jenis Kelamin" : "Gender"} value={profile?.isMale ? (lang === 'id' ? 'Putra' : 'Male') : (lang === 'id' ? 'Putri' : 'Female')} colorClass={profile?.isMale ? "text-blue-500 bg-blue-50" : "text-pink-500 bg-pink-50"} />
             <InfoCard icon={Mail} title="Email" value={user.email} colorClass="text-rose-500 bg-rose-50" />
             <InfoCard icon={Phone} title={lang === "id" ? "Nomor Telepon" : "Phone Number"} value={profile?.phoneNumber} colorClass="text-emerald-500 bg-emerald-50" />
             <InfoCard icon={Heart} title={lang === "id" ? "Status Marital" : "Marital Status"} value={profile?.maritalStatus?.name} colorClass="text-pink-500 bg-pink-50" />

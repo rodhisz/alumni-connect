@@ -3,26 +3,37 @@
 import { useState, useEffect } from "react"
 import Link from "next/link"
 import { useLanguage, useTheme } from "./Providers"
-import { useSession } from "next-auth/react"
-import { Moon, Sun, LogIn, Globe, User } from "lucide-react"
+import { useSession, signOut } from "next-auth/react"
+import { Moon, Sun, LogIn, Globe, User, LogOut } from "lucide-react"
 
-export default function HomeNavbar() {
+export default function HomeNavbar({ settings = {} }: { settings?: Record<string, string> }) {
   const { data: session } = useSession()
   const { theme, setTheme } = useTheme()
   const { lang, setLang, t } = useLanguage()
   const [mounted, setMounted] = useState(false)
   const isDark = theme === "dark"
 
-  useEffect(() => {
-    setMounted(true)
-  }, [])
+  useEffect(() => { setMounted(true) }, [])
+
+  const appName = settings["home_app_name"] || "Alumni Connect"
+  const logoUrl  = settings["alumni_logo"] || settings["school_logo"]
 
   return (
-    <div className="fixed top-0 w-full left-0 p-6 flex justify-between items-center glass z-50">
-      <h1 className="font-outfit text-2xl font-bold tracking-tight bg-gradient-to-r from-blue-500 to-cyan-400 bg-clip-text text-transparent">
-        Alumni Connect
-      </h1>
-      
+    <div className="fixed top-4 left-4 right-4 max-w-7xl mx-auto px-6 py-4 flex justify-between items-center glass rounded-[2rem] z-50 shadow-2xl">
+      <div className="flex items-center gap-3">
+        {logoUrl && (
+          <img
+            src={logoUrl}
+            alt="logo"
+            className="w-9 h-9 rounded-lg object-contain bg-white p-0.5"
+            onError={e => { (e.target as HTMLImageElement).style.display = "none" }}
+          />
+        )}
+        <h1 className="font-outfit text-2xl font-bold tracking-tight bg-gradient-to-r from-emerald-500 to-teal-400 bg-clip-text text-transparent">
+          {appName}
+        </h1>
+      </div>
+
       <div className="flex items-center gap-3">
         {/* Theme Toggle */}
         <button
@@ -41,22 +52,32 @@ export default function HomeNavbar() {
           <span className="text-xs font-bold uppercase">{lang}</span>
         </button>
 
-        <Link 
-          href="/admin" 
-          className="px-6 py-2.5 rounded-xl bg-blue-600 hover:bg-blue-700 text-white font-bold text-sm transition-all shadow-lg shadow-blue-500/30 flex items-center gap-2 hover:scale-105 active:scale-95 truncate max-w-[200px]"
-        >
-          {(mounted && session) ? (
-            <>
-              <User size={18} />
+        {mounted && session ? (
+          <div className="flex items-center gap-2">
+            <Link
+              href="/admin"
+              className="px-5 py-2.5 rounded-xl bg-zinc-100 dark:bg-zinc-800 text-zinc-900 dark:text-white font-bold text-sm transition-all flex items-center gap-2 hover:scale-105 active:scale-95 truncate max-w-[180px]"
+            >
+              <User size={18} className="text-emerald-500" />
               <span className="truncate">{session.user?.name || "User"}</span>
-            </>
-          ) : (
-            <>
-              <LogIn size={18} />
-              <span>{lang === "id" ? "Masuk Portal" : "Login Portal"}</span>
-            </>
-          )}
-        </Link>
+            </Link>
+            <button
+              onClick={() => signOut({ callbackUrl: "/" })}
+              className="p-2.5 rounded-xl bg-red-500/10 text-red-500 hover:bg-red-500 hover:text-white transition-all group"
+              title={t("logout")}
+            >
+              <LogOut size={18} className="group-hover:scale-110 transition-transform" />
+            </button>
+          </div>
+        ) : (
+          <Link
+            href="/login"
+            className="px-6 py-2.5 rounded-xl bg-emerald-600 hover:bg-emerald-700 text-white font-bold text-sm transition-all shadow-lg shadow-emerald-500/30 flex items-center gap-2 hover:scale-105 active:scale-95"
+          >
+            <LogIn size={18} />
+            <span>{lang === "id" ? "Masuk Portal" : "Login Portal"}</span>
+          </Link>
+        )}
       </div>
     </div>
   )

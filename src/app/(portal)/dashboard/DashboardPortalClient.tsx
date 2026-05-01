@@ -8,9 +8,10 @@ export default function DashboardPortalClient({ profile }: { profile: any }) {
   const { t, lang } = useLanguage()
 
   const isWaiting = profile.status === "WAITING"
+  const isMale = profile.isMale !== false // Default to true (male) if not specified
 
   return (
-    <div className="p-6 md:p-8 max-w-4xl mx-auto pb-24 sm:pb-8">
+    <div className={`p-6 md:p-8 max-w-4xl mx-auto pb-24 sm:pb-8 transition-colors duration-500`}>
       
       {/* Header Profile Section */}
       <div className="mb-8 flex flex-col md:flex-row md:items-end justify-between gap-6">
@@ -33,13 +34,32 @@ export default function DashboardPortalClient({ profile }: { profile: any }) {
         ) : (
           <Link 
             href="/dashboard/edit"
-            className="bg-blue-600 hover:bg-blue-700 text-white px-5 py-2.5 rounded-xl flex items-center gap-2 text-sm font-medium transition-colors"
+            className={`${isMale ? 'bg-blue-600 hover:bg-blue-700' : 'bg-pink-600 hover:bg-pink-700'} text-white px-5 py-2.5 rounded-xl flex items-center gap-2 text-sm font-medium transition-colors shadow-lg shadow-blue-500/20 dark:shadow-none`}
           >
             <Edit2 size={16} />
             {lang === "id" ? "Pengajuan Ubah Data" : "Request Data Change"}
           </Link>
         )}
       </div>
+
+      <style jsx global>{`
+        .glass-profile {
+          background: ${isMale 
+            ? 'rgba(239, 246, 255, 0.4)' 
+            : 'rgba(253, 242, 248, 0.4)'};
+          backdrop-filter: blur(12px);
+          border: 1px solid ${isMale ? 'rgba(191, 219, 254, 0.5)' : 'rgba(251, 207, 232, 0.5)'};
+        }
+        .dark .glass-profile {
+          background: ${isMale 
+            ? 'rgba(30, 58, 138, 0.1)' 
+            : 'rgba(131, 24, 67, 0.1)'};
+          border: 1px solid ${isMale ? 'rgba(30, 58, 138, 0.3)' : 'rgba(131, 24, 67, 0.3)'};
+        }
+        .text-gender {
+          color: ${isMale ? '#2563eb' : '#db2777'};
+        }
+      `}</style>
 
       {isWaiting && profile.revisions?.[0] && (
         <div className="mb-8 p-5 bg-white dark:bg-zinc-900 border border-orange-200 dark:border-orange-900 shadow-sm rounded-2xl">
@@ -86,7 +106,7 @@ export default function DashboardPortalClient({ profile }: { profile: any }) {
       <div className="grid grid-cols-1 md:grid-cols-2 gap-6">
         
         {/* Card: Pribadi & Kealumnian */}
-        <div className="glass rounded-3xl p-6 border border-zinc-200 dark:border-zinc-800 flex flex-col gap-5">
+        <div className="glass-profile rounded-3xl p-6 flex flex-col gap-5 transition-colors duration-500 shadow-sm">
           <div className="flex items-center gap-3 border-b border-zinc-100 dark:border-zinc-800 pb-3">
             <UserCircle className="text-blue-500" size={20} />
             <h3 className="font-semibold font-outfit text-zinc-900 dark:text-white">{lang === "id" ? "Data Identitas" : "Identity Data"}</h3>
@@ -105,6 +125,21 @@ export default function DashboardPortalClient({ profile }: { profile: any }) {
               <p className="text-sm font-medium text-zinc-900 dark:text-zinc-100">{profile.phoneNumber || "-"}</p>
             </div>
             <div className="grid grid-cols-2 gap-4">
+              <div>
+                <p className="text-xs text-zinc-500 uppercase tracking-wider font-semibold">
+                  {lang === "id" ? "Jenis Kelamin" : "Gender"}
+                </p>
+                <p className={`text-sm font-bold ${isMale ? 'text-blue-600' : 'text-pink-600'}`}>
+                  {isMale ? (lang === "id" ? "Putra" : "Male") : (lang === "id" ? "Putri" : "Female")}
+                </p>
+              </div>
+              <div>
+                <p className="text-xs text-zinc-500 uppercase tracking-wider font-semibold">{lang === "id" ? "Status Nikah" : "Marital Status"}</p>
+                <p className="text-sm font-medium text-zinc-900 dark:text-zinc-100">{profile.maritalStatus?.name || "-"}</p>
+              </div>
+            </div>
+
+            <div className="grid grid-cols-2 gap-4">
                <div>
                 <p className="text-xs text-zinc-500 uppercase tracking-wider font-semibold">{t("start_year")}</p>
                 <p className="text-sm font-medium text-zinc-900 dark:text-zinc-100">{profile.startYear || "-"}</p>
@@ -118,7 +153,7 @@ export default function DashboardPortalClient({ profile }: { profile: any }) {
         </div>
 
         {/* Card: Domisili */}
-        <div className="glass rounded-3xl p-6 border border-zinc-200 dark:border-zinc-800 flex flex-col gap-5">
+        <div className="glass-profile rounded-3xl p-6 flex flex-col gap-5 transition-colors duration-500 shadow-sm">
           <div className="flex items-center gap-3 border-b border-zinc-100 dark:border-zinc-800 pb-3">
             <MapPin className="text-rose-500" size={20} />
             <h3 className="font-semibold font-outfit text-zinc-900 dark:text-white">{t("domicile")}</h3>
@@ -161,14 +196,13 @@ export default function DashboardPortalClient({ profile }: { profile: any }) {
         </div>
 
         {/* Card: Pekerjaan & Pendidikan */}
-        <div className="glass rounded-3xl p-6 border border-zinc-200 dark:border-zinc-800 md:col-span-2 flex flex-col gap-5">
+        <div className="glass-profile rounded-3xl p-6 md:col-span-2 flex flex-col gap-5 transition-colors duration-500 shadow-sm">
            <div className="flex items-center gap-3 border-b border-zinc-100 dark:border-zinc-800 pb-3">
             <Briefcase className="text-emerald-500" size={20} />
             <h3 className="font-semibold font-outfit text-zinc-900 dark:text-white">{lang === "id" ? "Status Utama" : "Primary Status"}: {
               profile.activityStatus === "WORKING" ? t("working") : 
               profile.activityStatus === "COLLEGE" ? t("college") : 
-              profile.activityStatus === "COLLEGE_AND_WORKING" ? t("college_and_working") : 
-              profile.activityStatus === "GRADUATED_AND_WORKING" ? t("graduated_and_working") : "-"
+              profile.activityStatus === "COLLEGE_AND_WORKING" ? t("college_and_working") : "-"
             }</h3>
           </div>
 
@@ -195,7 +229,7 @@ export default function DashboardPortalClient({ profile }: { profile: any }) {
             ) : <div className="text-xs text-zinc-400 italic font-medium">{lang === "id" ? "Tidak ada keterangan perkuliahan aktif." : "No active college information."}</div>}
 
             {/* Pekerjaan Details */}
-            {(profile.activityStatus === "WORKING" || profile.activityStatus === "COLLEGE_AND_WORKING" || profile.activityStatus === "GRADUATED_AND_WORKING") ? (
+            {(profile.activityStatus === "WORKING" || profile.activityStatus === "COLLEGE_AND_WORKING") ? (
               <div className="space-y-4 border-l-2 border-emerald-500 pl-4">
                 <div className="flex items-center gap-2 text-emerald-600 mb-2">
                   <Briefcase size={16}/> <span className="font-semibold text-xs uppercase">{lang === "id" ? "Pekerjaan Saat Ini" : "Current Job"}</span>

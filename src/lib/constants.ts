@@ -9,7 +9,12 @@ export const CATEGORY_LABELS: Record<Category, string> = {
   COLLEGE_STATUS: "Status Kuliah",
   JOB_STATUS: "Status Pekerjaan",
   UNIVERSITY: "Universitas / Perguruan Tinggi",
-  APPROVER_EMAIL: "Email Penyetuju"
+  APPROVER_EMAIL: "Email Penyetuju",
+  CITIZENSHIP: "Kewarganegaraan",
+  PROVINCE: "Provinsi",
+  CITY: "Kota/Kabupaten",
+  COUNTRY: "Negara",
+  STATE: "Negara Bagian/Provinsi Luar Negeri"
 }
 
 export const CATEGORY_OPTIONS = Object.entries(CATEGORY_LABELS).map(([value, label]) => ({

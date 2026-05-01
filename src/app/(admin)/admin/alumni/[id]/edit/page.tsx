@@ -56,6 +56,7 @@ export default async function AdminEditProfilePage({ params }: { params: Promise
     phoneNumber: user.profile?.phoneNumber || "",
     maritalStatusId: user.profile?.maritalStatusId || "",
     citizenship: user.profile?.citizenship || "",
+    isMale: user.profile?.isMale !== undefined ? user.profile.isMale : true,
     startYear: user.profile?.startYear?.toString() || "",
     graduationYear: user.profile?.graduationYear || "",
     highestEducation: user.profile?.highestEducation || "",

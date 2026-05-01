@@ -54,20 +54,21 @@ export async function submitProfileRevision(formData: any) {
 
     const newRevision = await prisma.profileRevision.create({
       data: {
-        profileId: profile.id,
-        userId: session.user.id,
+        profile: { connect: { id: profile.id } },
+        user: { connect: { id: session.user.id } },
         status: "WAITING",
 
         fullName: formData.fullName || null,
         phoneNumber: formData.phoneNumber || null,
-        maritalStatusId: formData.maritalStatusId || null,
+        maritalStatus: formData.maritalStatusId ? { connect: { id: formData.maritalStatusId } } : undefined,
         citizenship: formData.citizenship || null,
+        isMale: formData.isMale !== undefined ? formData.isMale : true,
         
         startYear: formData.startYear ? parseInt(formData.startYear) : null,
         graduationYear: formData.graduationYear || null,
         highestEducation: formData.highestEducation || null,
-        entryLevelId: formData.entryLevelId || null,
-        graduationStatusId: formData.graduationStatusId || null,
+        entryLevel: formData.entryLevelId ? { connect: { id: formData.entryLevelId } } : undefined,
+        graduationStatus: formData.graduationStatusId ? { connect: { id: formData.graduationStatusId } } : undefined,
         
         domicileType: formData.domicileType || null,
         provinceId: formData.provinceId || null,
@@ -81,17 +82,17 @@ export async function submitProfileRevision(formData: any) {
         
         activityStatus: formData.activityStatus || null,
         collegeDomicileType: formData.collegeDomicileType || null,
-        collegeLevelId: formData.collegeLevelId || null,
-        universityId: formData.universityId || null,
+        collegeLevel: formData.collegeLevelId ? { connect: { id: formData.collegeLevelId } } : undefined,
+        university: formData.universityId ? { connect: { id: formData.universityId } } : undefined,
         otherUniversity: formData.otherUniversity || null,
-        majorId: formData.majorId || null,
+        major: formData.majorId ? { connect: { id: formData.majorId } } : undefined,
         otherMajor: formData.otherMajor || null,
-        collegeStatusId: formData.collegeStatusId || null,
+        collegeStatus: formData.collegeStatusId ? { connect: { id: formData.collegeStatusId } } : undefined,
         
         companyName: formData.companyName || null,
-        jobStatusId: formData.jobStatusId || null,
+        jobStatus: formData.jobStatusId ? { connect: { id: formData.jobStatusId } } : undefined,
         jobPosition: formData.jobPosition || null,
-      }
+      } as any
     })
 
     // Update base status to WAITING

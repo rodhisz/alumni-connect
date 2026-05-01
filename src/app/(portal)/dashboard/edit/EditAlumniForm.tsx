@@ -142,6 +142,13 @@ export default function EditAlumniForm({
               {(options.MARITAL_STATUS || []).map(opt => <option key={opt.value} value={opt.value}>{opt.label}</option>)}
             </select>
           </div>
+          <div>
+            <label className={lbl}>{lang === "id" ? "Jenis Kelamin" : "Gender"} *</label>
+            <select required name="isMale" value={formData.isMale ? "true" : "false"} onChange={(e) => setFormData({...formData, isMale: e.target.value === "true"})} className={inp}>
+              <option value="true">{lang === "id" ? "Putra (Laki-laki)" : "Male"}</option>
+              <option value="false">{lang === "id" ? "Putri (Perempuan)" : "Female"}</option>
+            </select>
+          </div>
         </div>
       </section>
 
@@ -264,7 +271,6 @@ export default function EditAlumniForm({
             <option value="COLLEGE">{t("college")}</option>
             <option value="WORKING">{t("working")}</option>
             <option value="COLLEGE_AND_WORKING">{t("college_and_working")}</option>
-            <option value="GRADUATED_AND_WORKING">{t("graduated_and_working")}</option>
           </select>
         </div>
 
@@ -312,7 +318,7 @@ export default function EditAlumniForm({
           </div>
         )}
 
-        {(formData.activityStatus === "WORKING" || formData.activityStatus === "COLLEGE_AND_WORKING" || formData.activityStatus === "GRADUATED_AND_WORKING") && (
+        {(formData.activityStatus === "WORKING" || formData.activityStatus === "COLLEGE_AND_WORKING") && (
           <div className="mt-6 border border-zinc-100 dark:border-zinc-800 rounded-2xl p-6 bg-emerald-50/50 dark:bg-emerald-900/10">
             <h3 className="font-semibold text-sm mb-4 text-emerald-600 dark:text-emerald-400">
               {lang === "id" ? "Detail Pekerjaan" : "Work Details"}

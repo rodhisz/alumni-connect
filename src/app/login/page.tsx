@@ -38,8 +38,8 @@ export default function LoginPage() {
   return (
     <div className="min-h-screen bg-zinc-50 dark:bg-zinc-950 flex items-center justify-center p-4 relative overflow-hidden">
       {/* Background blobs */}
-      <div className="absolute top-[-10%] left-[-10%] w-[40%] h-[40%] rounded-full bg-blue-500/20 blur-[120px] pointer-events-none" />
-      <div className="absolute bottom-[-10%] right-[-10%] w-[40%] h-[40%] rounded-full bg-cyan-500/20 blur-[120px] pointer-events-none" />
+      <div className="absolute top-[-10%] left-[-10%] w-[40%] h-[40%] rounded-full bg-emerald-500/20 blur-[120px] pointer-events-none" />
+      <div className="absolute bottom-[-10%] right-[-10%] w-[40%] h-[40%] rounded-full bg-teal-500/20 blur-[120px] pointer-events-none" />
 
       <div className="w-full max-w-md space-y-4">
         <Link 
@@ -54,7 +54,7 @@ export default function LoginPage() {
 
         <div className="glass border border-zinc-200 dark:border-zinc-800 rounded-3xl p-8 shadow-2xl relative z-10 w-full">
           <div className="text-center mb-8">
-            <div className="w-16 h-16 bg-blue-600 rounded-2xl flex items-center justify-center mx-auto mb-4 text-white shadow-lg shadow-blue-500/30">
+            <div className="w-16 h-16 bg-emerald-600 rounded-2xl flex items-center justify-center mx-auto mb-4 text-white shadow-lg shadow-emerald-500/30">
               <ShieldCheck size={32} />
             </div>
             <h1 className="text-2xl font-outfit font-bold text-zinc-900 dark:text-white">
@@ -82,7 +82,7 @@ export default function LoginPage() {
                 type="email" 
                 value={email}
                 onChange={e => setEmail(e.target.value)}
-                className="w-full px-4 py-3 rounded-xl border border-zinc-200 dark:border-zinc-800 bg-zinc-50 dark:bg-zinc-950 focus:outline-none focus:ring-2 focus:ring-blue-500/50 text-sm transition-all"
+                className="w-full px-4 py-3 rounded-xl border border-zinc-200 dark:border-zinc-800 bg-zinc-50 dark:bg-zinc-950 focus:outline-none focus:ring-2 focus:ring-emerald-500/50 text-sm transition-all"
                 placeholder="nama@email.com"
               />
             </div>
@@ -95,7 +95,7 @@ export default function LoginPage() {
                 type="password" 
                 value={password}
                 onChange={e => setPassword(e.target.value)}
-                className="w-full px-4 py-3 rounded-xl border border-zinc-200 dark:border-zinc-800 bg-zinc-50 dark:bg-zinc-950 focus:outline-none focus:ring-2 focus:ring-blue-500/50 text-sm transition-all"
+                className="w-full px-4 py-3 rounded-xl border border-zinc-200 dark:border-zinc-800 bg-zinc-50 dark:bg-zinc-950 focus:outline-none focus:ring-2 focus:ring-emerald-500/50 text-sm transition-all"
                 placeholder="••••••••"
               />
             </div>
@@ -103,7 +103,7 @@ export default function LoginPage() {
             <button 
               type="submit" 
               disabled={loading}
-              className="w-full flex justify-center items-center gap-2 py-3.5 px-4 bg-blue-600 hover:bg-blue-700 text-white rounded-xl font-medium transition-all disabled:opacity-50"
+              className="w-full flex justify-center items-center gap-2 py-3.5 px-4 bg-emerald-600 hover:bg-emerald-700 text-white rounded-xl font-medium transition-all disabled:opacity-50"
             >
               {loading ? (lang === "id" ? "Memverifikasi..." : "Verifying...") : (
                 <>
@@ -117,7 +117,7 @@ export default function LoginPage() {
           <div className="mt-8 pt-6 border-t border-zinc-200 dark:border-zinc-800 text-center">
             <p className="text-sm text-zinc-500 dark:text-zinc-400">
               {lang === "id" ? "Belum memiliki kata sandi?" : "Don't have a password yet?"}{" "}
-              <Link href="/aktivasi" className="text-blue-600 dark:text-blue-400 font-medium hover:underline">
+              <Link href="/aktivasi" className="text-emerald-600 dark:text-emerald-400 font-medium hover:underline">
                 {lang === "id" ? "Aktivasi Akun" : "Account Activation"}
               </Link>
             </p>

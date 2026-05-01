@@ -78,6 +78,7 @@ export default function ApprovalReviewClient({ revision, canApprove }: { revisio
             <DiffView label={t("full_name")} oldVal={revision.profile.fullName} newVal={revision.fullName} />
             <DiffView label={t("phone_number")} oldVal={revision.profile.phoneNumber} newVal={revision.phoneNumber} />
             <DiffView label={t("citizenship")} oldVal={revision.profile.citizenship} newVal={revision.citizenship} />
+            <DiffView label={lang === "id" ? "Jenis Kelamin" : "Gender"} oldVal={revision.profile.isMale === null ? null : (revision.profile.isMale ? (lang === "id" ? "Putra" : "Male") : (lang === "id" ? "Putri" : "Female"))} newVal={revision.isMale === null ? null : (revision.isMale ? (lang === "id" ? "Putra" : "Male") : (lang === "id" ? "Putri" : "Female"))} />
             <DiffView label={t("marital_status")} 
               oldVal={revision.profile.maritalStatus?.name} 
               newVal={revision.maritalStatus?.name} 

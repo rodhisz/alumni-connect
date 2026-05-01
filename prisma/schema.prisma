@@ -29,6 +29,8 @@ model MasterData {
   description String?
   isActive    Boolean  @default(true)
   order       Int      @default(0) // For sorting options
+  latitude    Float?              // For map plotting
+  longitude   Float?              // For map plotting
   createdAt   DateTime @default(now())
   updatedAt   DateTime @updatedAt
 
@@ -41,6 +43,10 @@ model MasterData {
   profilesAsCollegeStatus    AlumniProfile[] @relation("CollegeStatus")
   profilesAsJobStatus        AlumniProfile[] @relation("JobStatus")
   profilesAsUniversity       AlumniProfile[] @relation("University")
+  profilesAsProvince         AlumniProfile[] @relation("Province")
+  profilesAsCity             AlumniProfile[] @relation("City")
+  profilesAsCountry          AlumniProfile[] @relation("Country")
+  profilesAsState            AlumniProfile[] @relation("State")
 
   // Pending profile revisions
   revisionsAsMaritalStatus    ProfileRevision[] @relation("RevMaritalStatus")
@@ -51,6 +57,10 @@ model MasterData {
   revisionsAsCollegeStatus    ProfileRevision[] @relation("RevCollegeStatus")
   revisionsAsJobStatus        ProfileRevision[] @relation("RevJobStatus")
   revisionsAsUniversity       ProfileRevision[] @relation("RevUniversity")
+  revisionsAsProvince         ProfileRevision[] @relation("RevProvince")
+  revisionsAsCity             ProfileRevision[] @relation("RevCity")
+  revisionsAsCountry          ProfileRevision[] @relation("RevCountry")
+  revisionsAsState            ProfileRevision[] @relation("RevState")
 
   @@unique([category, name])
 }
@@ -65,10 +75,11 @@ enum Category {
   JOB_STATUS
   UNIVERSITY
   APPROVER_EMAIL
-  DOMESTIC_PROVINCE
-  DOMESTIC_CITY
-  FOREIGN_COUNTRY
   CITIZENSHIP
+  PROVINCE
+  CITY
+  COUNTRY
+  STATE
 }
 
 // ----------------------------------------------------------------------------
@@ -139,6 +150,7 @@ model AlumniProfile {
   maritalStatusId String?
   maritalStatus   MasterData? @relation("MaritalStatus", fields: [maritalStatusId], references: [id])
   citizenship     String?
+  isMale          Boolean     @default(true)
 
   // ==========================================
   // B. Data Kealumnian (Alumni Data)
@@ -157,16 +169,20 @@ model AlumniProfile {
   domicileType DomisiliType?
 
   // C1. Domestic
-  provinceId String?
-  cityId     String?
+  provinceId   String?
+  province     MasterData? @relation("Province", fields: [provinceId], references: [id])
   provinceName String?
+  cityId       String?
+  city         MasterData? @relation("City", fields: [cityId], references: [id])
   cityName     String?
 
   // C2. Foreign
-  countryId String?
-  stateId   String?
-  countryName String?
-  stateName   String?
+  countryId    String?
+  country      MasterData? @relation("Country", fields: [countryId], references: [id])
+  countryName  String?
+  stateId      String?
+  state        MasterData? @relation("State", fields: [stateId], references: [id])
+  stateName    String?
 
   // Lat Long for Map Plotting (Derived from Domisili)
   latitude  Float?
@@ -230,6 +246,7 @@ model ProfileRevision {
   maritalStatusId String?
   maritalStatus   MasterData? @relation("RevMaritalStatus", fields: [maritalStatusId], references: [id])
   citizenship     String?
+  isMale          Boolean?
 
   startYear          Int?
   graduationYear     String?
@@ -241,12 +258,16 @@ model ProfileRevision {
 
   domicileType DomisiliType?
   provinceId   String?
-  cityId       String?
+  province     MasterData? @relation("RevProvince", fields: [provinceId], references: [id])
   provinceName String?
+  cityId       String?
+  city         MasterData? @relation("RevCity", fields: [cityId], references: [id])
   cityName     String?
   countryId    String?
-  stateId      String?
+  country      MasterData? @relation("RevCountry", fields: [countryId], references: [id])
   countryName  String?
+  stateId      String?
+  state        MasterData? @relation("RevState", fields: [stateId], references: [id])
   stateName    String?
   latitude     Float?
   longitude    Float?
@@ -312,3 +333,34 @@ model News {
   updatedAt   DateTime @updatedAt
 }
 
+// ----------------------------------------------------------------------------
+// 8. SITE SETTINGS (Key-value config: school info, home text, logo)
+// ----------------------------------------------------------------------------
+model SiteSetting {
+  id        String   @id @default(cuid())
+  key       String   @unique
+  value     String?  @db.Text
+  updatedAt DateTime @updatedAt
+}
+
+// ----------------------------------------------------------------------------
+// 9. DASHBOARD WIDGETS (Custom SQL-powered widgets, superuser only)
+// ----------------------------------------------------------------------------
+model DashboardWidget {
+  id          String   @id @default(cuid())
+  name        String
+  description String?
+  
+  // Query Logic
+  useRawQuery  Boolean @default(true)
+  sqlQuery     String? @db.Text
+  builderConfig Json?   // { entity: string, filters: [], aggregation: string }
+  
+  chartType   String   @default("number") // number | table | bar | pie
+  color       String   @default("emerald")
+  colSpan     Int      @default(1)       // 1-4 grid columns
+  order       Int      @default(0)
+  isActive    Boolean  @default(true)
+  createdAt   DateTime @default(now())
+  updatedAt   DateTime @updatedAt
+}

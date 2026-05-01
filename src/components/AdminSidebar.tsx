@@ -17,7 +17,7 @@ export default function AdminSidebar({ session, role }: SidebarProps) {
   const { t, lang } = useLanguage()
   const pathname = usePathname()
   const menuItems = [
-    { label: t("alumni_data"), href: "/admin/alumni", icon: Users, roles: ["SUPERUSER", "ADMIN"] },
+    { label: t("alumni_data"), href: "/admin/alumni", icon: Users, roles: ["SUPERUSER", "ADMIN", "ALUMNI"] },
     { 
       label: t("personal_data"), 
       href: role === "ALUMNI" ? `/admin/alumni/${session?.user?.id}` : "/admin/profile", 
@@ -32,6 +32,8 @@ export default function AdminSidebar({ session, role }: SidebarProps) {
 
   const settingItems = [
     { label: t("user_management"), href: "/admin/settings/users", icon: UserCog, roles: ["SUPERUSER"] },
+    { label: lang === 'id' ? "Pengaturan Situs" : "Site Settings", href: "/admin/settings/site", icon: ShieldCheck, roles: ["SUPERUSER"] },
+    { label: lang === 'id' ? "Widget Dashboard" : "Dashboard Widgets", href: "/admin/settings/widgets", icon: LayoutDashboard, roles: ["SUPERUSER"] },
     { label: t("approval_matrix"), href: "/admin/settings/approvals", icon: ShieldCheck, roles: ["SUPERUSER"] },
     { label: lang === 'id' ? "Pemeliharaan" : "Maintenance", href: "/admin/settings/maintenance", icon: AlertTriangle, roles: ["SUPERUSER"] },
   ]
@@ -42,12 +44,12 @@ export default function AdminSidebar({ session, role }: SidebarProps) {
     <aside className="w-68 flex flex-col border-r border-zinc-200 dark:border-zinc-800 glass z-10 hidden md:flex">
       <div className="p-6 pb-2 flex items-center justify-between gap-4">
         <div className="flex-1 min-w-0">
-          <h2 className="text-xl font-outfit font-bold bg-gradient-to-r from-blue-500 to-cyan-400 bg-clip-text text-transparent">
+          <h2 className="text-xl font-outfit font-bold bg-gradient-to-r from-emerald-500 to-teal-400 bg-clip-text text-transparent">
             Alumni Connect
           </h2>
           <p className="text-[10px] uppercase tracking-widest text-zinc-400 font-bold mt-1 flex items-center gap-2">
             <span className={`px-1.5 py-0.5 rounded ${
-              role === 'SUPERUSER' ? 'bg-purple-500/20 text-purple-600' :
+              role === 'SUPERUSER' ? 'bg-emerald-500/20 text-emerald-600' :
               role === 'ADMIN' ? 'bg-amber-500/20 text-amber-600' :
               'bg-zinc-500/20 text-zinc-600'
             }`}>
@@ -65,8 +67,8 @@ export default function AdminSidebar({ session, role }: SidebarProps) {
             href={item.href} 
             className={`flex items-center gap-3 px-4 py-3 rounded-xl transition-all ${
               isActive(item.href) 
-                ? "bg-blue-50 dark:bg-blue-900/20 text-blue-600 dark:text-blue-400 shadow-sm" 
-                : "text-zinc-600 dark:text-zinc-400 hover:bg-zinc-100 dark:hover:bg-zinc-800/50 hover:text-blue-500"
+                ? "bg-emerald-50 dark:bg-emerald-900/20 text-emerald-600 dark:text-emerald-400 shadow-sm" 
+                : "text-zinc-600 dark:text-zinc-400 hover:bg-zinc-100 dark:hover:bg-zinc-800/50 hover:text-emerald-500"
             }`}
           >
             <item.icon size={18} />
@@ -85,8 +87,8 @@ export default function AdminSidebar({ session, role }: SidebarProps) {
                 href={item.href} 
                 className={`flex items-center gap-3 px-4 py-3 rounded-xl transition-all ${
                   isActive(item.href) 
-                    ? "bg-blue-50 dark:bg-blue-900/20 text-blue-600 dark:text-blue-400 shadow-sm" 
-                    : "text-zinc-600 dark:text-zinc-400 hover:bg-zinc-100 dark:hover:bg-zinc-800/50 hover:text-blue-500"
+                    ? "bg-emerald-50 dark:bg-emerald-900/20 text-emerald-600 dark:text-emerald-400 shadow-sm" 
+                    : "text-zinc-600 dark:text-zinc-400 hover:bg-zinc-100 dark:hover:bg-zinc-800/50 hover:text-emerald-500"
                 }`}
               >
                 <item.icon size={18} />

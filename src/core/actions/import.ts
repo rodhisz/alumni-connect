@@ -26,14 +26,14 @@ export async function importMasterDataBulk(items: any[], dryRun: boolean = false
           key => CATEGORY_LABELS[key] === categoryInput || key === categoryInput
         );
 
-        if (!techName) return { name, error: `Kategori tidak valid: ${categoryInput}`, type: 'ERROR' };
+        if (!techName) return { name, error: `Kategori tidak valid: ${categoryInput}`, type: 'ERROR' } as const;
 
         const existing = await prisma.masterData.findUnique({
           where: { category_name: { category: techName, name } }
         });
 
-        if (existing) return { name, message: "Sudah terdaftar (akan di-update)", type: 'WARNING' };
-        return { name, message: "Siap diimpor (data baru)", type: 'SUCCESS' };
+        if (existing) return { name, message: "Sudah terdaftar (akan di-update)", type: 'WARNING' } as const;
+        return { name, message: "Siap diimpor (data baru)", type: 'SUCCESS' } as const;
       }));
       return { success: true, dryRun: true, results: validations };
     }
@@ -95,13 +95,13 @@ export async function importAlumniBulk(items: any[], dryRun: boolean = false) {
         const email = (item.Email || item.email || "").toLowerCase().trim();
         const name = item["Full Name"] || item["Nama Lengkap"] || item.name || item.fullName;
 
-        if (!email) return { name: name || "Unknown", error: "Email kosong", type: 'ERROR' };
-        if (!name) return { name: email, error: "Nama kosong", type: 'ERROR' };
+        if (!email) return { name: name || "Unknown", error: "Email kosong", type: 'ERROR' } as const;
+        if (!name) return { name: email, error: "Nama kosong", type: 'ERROR' } as const;
 
         const existing = await prisma.user.findUnique({ where: { email } });
-        if (existing) return { name, error: "Email sudah terdaftar", type: 'ERROR' };
+        if (existing) return { name, error: "Email sudah terdaftar", type: 'ERROR' } as const;
 
-        return { name, message: "Siap diimpor", type: 'SUCCESS' };
+        return { name, message: "Siap diimpor", type: 'SUCCESS' } as const;
       }));
       return { success: true, dryRun: true, results: validations };
     }
@@ -160,19 +160,33 @@ export async function importAlumniFullBulk(items: any[], dryRun: boolean = false
     return { success: false, error: "Unauthorized" }
   }
 
+  // Fetch location data once for matching
+  let provinces: any[] = []
+  let countries: any[] = []
+  try {
+    const [pRes, cRes] = await Promise.all([
+      fetch("https://wilayah.id/api/provinces.json").then(r => r.json()),
+      fetch("https://countriesnow.space/api/v0.1/countries/iso").then(r => r.json())
+    ])
+    provinces = pRes.data || []
+    countries = cRes.data || []
+  } catch (e) {
+    console.error("Import location fetch error:", e)
+  }
+
   try {
     if (dryRun) {
       const validations = await Promise.all(items.map(async (item) => {
         const email = (item.Email || item.email || "").toLowerCase().trim();
         const name = item["Full Name"] || item["Nama Lengkap"] || item.name || item.fullName;
 
-        if (!email) return { name: name || "Unknown", error: "Email kosong", type: 'ERROR' };
-        if (!name) return { name: email, error: "Nama kosong", type: 'ERROR' };
+        if (!email) return { name: name || "Unknown", error: "Email kosong", type: 'ERROR' } as const;
+        if (!name) return { name: email, error: "Nama kosong", type: 'ERROR' } as const;
 
         const existing = await prisma.user.findUnique({ where: { email } });
-        if (existing) return { name, message: "Akan di-update", type: 'WARNING' };
+        if (existing) return { name, message: "Akan di-update", type: 'WARNING' } as const;
 
-        return { name, message: "Siap diimpor", type: 'SUCCESS' };
+        return { name, message: "Siap diimpor", type: 'SUCCESS' } as const;
       }));
       return { success: true, dryRun: true, results: validations };
     }
@@ -188,9 +202,29 @@ export async function importAlumniFullBulk(items: any[], dryRun: boolean = false
       const gradYear = (item["Graduation Year"] || item["Tahun Lulus"] || "").toString();
       const education = item["Highest Education"] || item["Jenjang Terakhir"];
       
-      const domicileType = (item.Domisili || item.domicileType) === "FOREIGN" ? "FOREIGN" : "DOMESTIC";
-      const provinceName = item["Provinsi/Negara"] || item.provinceName;
-      const cityName = item["Kota/State"] || item.cityName;
+      const domicileType = (item.Domisili || item.domicileType || "").toString().toUpperCase() === "FOREIGN" ? "FOREIGN" : "DOMESTIC";
+      let provinceName = item["Provinsi/Negara"] || item.provinceName || "";
+      let cityName = item["Kota/State"] || item.cityName || "";
+      let countryName = provinceName;
+      let stateName = cityName;
+
+      let provinceId = null;
+      let countryId = null;
+
+      if (domicileType === "DOMESTIC") {
+        const match = provinces.find(p => p.name.toLowerCase() === provinceName.toLowerCase());
+        if (match) {
+          provinceId = match.code;
+          provinceName = match.name; // Use official name
+        }
+      } else {
+        const match = countries.find(c => c.name.toLowerCase() === countryName.toLowerCase());
+        if (match) {
+          countryId = match.name; // API uses name as ID
+          countryName = match.name;
+        }
+      }
+
       const companyName = item.Pekerjaan || item.companyName;
       const jobPosition = item.Posisi || item.jobPosition;
 
@@ -207,10 +241,12 @@ export async function importAlumniFullBulk(items: any[], dryRun: boolean = false
                 graduationYear: gradYear || null,
                 highestEducation: education || null,
                 domicileType,
+                provinceId,
                 provinceName: domicileType === "DOMESTIC" ? provinceName : null,
                 cityName: domicileType === "DOMESTIC" ? cityName : null,
-                countryName: domicileType === "FOREIGN" ? provinceName : null,
-                stateName: domicileType === "FOREIGN" ? cityName : null,
+                countryId,
+                countryName: domicileType === "FOREIGN" ? countryName : null,
+                stateName: domicileType === "FOREIGN" ? stateName : null,
                 companyName,
                 jobPosition,
                 status: "APPROVED"
@@ -222,10 +258,12 @@ export async function importAlumniFullBulk(items: any[], dryRun: boolean = false
                 graduationYear: gradYear || null,
                 highestEducation: education || null,
                 domicileType,
+                provinceId,
                 provinceName: domicileType === "DOMESTIC" ? provinceName : null,
                 cityName: domicileType === "DOMESTIC" ? cityName : null,
-                countryName: domicileType === "FOREIGN" ? provinceName : null,
-                stateName: domicileType === "FOREIGN" ? cityName : null,
+                countryId,
+                countryName: domicileType === "FOREIGN" ? countryName : null,
+                stateName: domicileType === "FOREIGN" ? stateName : null,
                 companyName,
                 jobPosition,
                 status: "APPROVED"
@@ -245,10 +283,12 @@ export async function importAlumniFullBulk(items: any[], dryRun: boolean = false
               graduationYear: gradYear || null,
               highestEducation: education || null,
               domicileType,
+              provinceId,
               provinceName: domicileType === "DOMESTIC" ? provinceName : null,
               cityName: domicileType === "DOMESTIC" ? cityName : null,
-              countryName: domicileType === "FOREIGN" ? provinceName : null,
-              stateName: domicileType === "FOREIGN" ? cityName : null,
+              countryId,
+              countryName: domicileType === "FOREIGN" ? countryName : null,
+              stateName: domicileType === "FOREIGN" ? stateName : null,
               companyName,
               jobPosition,
               status: "APPROVED"

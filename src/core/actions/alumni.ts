@@ -6,11 +6,29 @@ import { getServerSession } from "next-auth/next"
 import { authOptions } from "@/lib/auth"
 import { createNotification } from "./notifications"
 
-export async function getAlumniList(page: number = 1, pageSize: number = 10, search: string = "") {
+export async function getAlumniList(page: number = 1, pageSize: number = 10, search: string = "", gender: string = "ALL") {
   try {
+    const session = await getServerSession(authOptions);
+    const role = session?.user?.role || "ALUMNI";
+    const currentUserId = session?.user?.id;
+
     const skip = (page - 1) * pageSize;
     
     const where: any = { role: "ALUMNI" };
+
+    if (role === "ALUMNI" && currentUserId) {
+      const currentProfile = await prisma.alumniProfile.findUnique({ where: { userId: currentUserId } });
+      if (currentProfile) {
+        where.profile = {
+          isMale: currentProfile.isMale
+        };
+      }
+    } else if (gender !== "ALL") {
+      where.profile = {
+        isMale: gender === "MALE"
+      };
+    }
+
     if (search) {
       where.OR = [
         { name: { contains: search, mode: 'insensitive' } },
@@ -96,109 +114,64 @@ export async function createFullAlumni(data: any) {
           create: {
             fullName: data.fullName,
             phoneNumber: data.phoneNumber || null,
-            maritalStatusId: data.maritalStatusId || null,
+            maritalStatus: data.maritalStatusId ? { connect: { id: data.maritalStatusId } } : undefined,
             citizenship: data.citizenship || null,
+            isMale: data.isMale !== undefined ? data.isMale : true,
             
             startYear: data.startYear ? parseInt(data.startYear) : null,
             graduationYear: data.graduationYear || null,
             highestEducation: data.highestEducation || null,
-            entryLevelId: data.entryLevelId || null,
-            graduationStatusId: data.graduationStatusId || null,
+            entryLevel: data.entryLevelId ? { connect: { id: data.entryLevelId } } : undefined,
+            graduationStatus: data.graduationStatusId ? { connect: { id: data.graduationStatusId } } : undefined,
             
             domicileType: data.domicileType || null,
-            provinceId: data.provinceId || null,
+            province: data.provinceId ? { connect: { id: data.provinceId } } : undefined,
             provinceName: data.provinceName || null,
-            cityId: data.cityId || null,
+            city: data.cityId ? { connect: { id: data.cityId } } : undefined,
             cityName: data.cityName || null,
-            countryId: data.countryId || null,
+            country: data.countryId ? { connect: { id: data.countryId } } : undefined,
             countryName: data.countryName || null,
-            stateId: data.stateId || null,
+            state: data.stateId ? { connect: { id: data.stateId } } : undefined,
             stateName: data.stateName || null,
             
             activityStatus: data.activityStatus || null,
             collegeDomicileType: data.collegeDomicileType || null,
-            collegeLevelId: data.collegeLevelId || null,
-            universityId: data.universityId || null,
+            collegeLevel: data.collegeLevelId ? { connect: { id: data.collegeLevelId } } : undefined,
+            university: data.universityId ? { connect: { id: data.universityId } } : undefined,
             otherUniversity: data.otherUniversity || null,
-            majorId: data.majorId || null,
+            major: data.majorId ? { connect: { id: data.majorId } } : undefined,
             otherMajor: data.otherMajor || null,
-            collegeStatusId: data.collegeStatusId || null,
+            collegeStatus: data.collegeStatusId ? { connect: { id: data.collegeStatusId } } : undefined,
             
             companyName: data.companyName || null,
-            jobStatusId: data.jobStatusId || null,
+            jobStatus: data.jobStatusId ? { connect: { id: data.jobStatusId } } : undefined,
             jobPosition: data.jobPosition || null,
             
-            status: "WAITING" // Changes require approval
-          }
+            status: "APPROVED"
+          } as any
         }
-      },
+      } as any,
       include: { profile: true }
     })
 
-    if (newUser.profile) {
-      await prisma.profileRevision.create({
-        data: {
-          profileId: newUser.profile.id,
-          userId: newUser.id,
-          status: "WAITING",
-
-          fullName: data.fullName,
-          phoneNumber: data.phoneNumber || null,
-          maritalStatusId: data.maritalStatusId || null,
-          citizenship: data.citizenship || null,
-          
-          startYear: data.startYear ? parseInt(data.startYear) : null,
-          graduationYear: data.graduationYear || null,
-          highestEducation: data.highestEducation || null,
-          entryLevelId: data.entryLevelId || null,
-          graduationStatusId: data.graduationStatusId || null,
-          
-          domicileType: data.domicileType || null,
-          provinceId: data.provinceId || null,
-          provinceName: data.provinceName || null,
-          cityId: data.cityId || null,
-          cityName: data.cityName || null,
-          countryId: data.countryId || null,
-          countryName: data.countryName || null,
-          stateId: data.stateId || null,
-          stateName: data.stateName || null,
-          
-          activityStatus: data.activityStatus || null,
-          collegeDomicileType: data.collegeDomicileType || null,
-          collegeLevelId: data.collegeLevelId || null,
-          universityId: data.universityId || null,
-          otherUniversity: data.otherUniversity || null,
-          majorId: data.majorId || null,
-          otherMajor: data.otherMajor || null,
-          collegeStatusId: data.collegeStatusId || null,
-          
-          companyName: data.companyName || null,
-          jobStatusId: data.jobStatusId || null,
-          jobPosition: data.jobPosition || null,
-        }
-      })
-
-      // Notify Admins
-      await createNotification({
-        userId: null, // null for all admins
-        title: "Pengajuan Alumni Baru",
-        message: `${data.fullName} baru saja mengisi data alumni dan menunggu persetujuan.`,
-        type: "APPROVAL_REQUEST",
-        link: "/admin/approvals"
-      })
-    }
+    // Admin action, no revision or notification needed.
 
     revalidatePath("/admin/alumni")
     revalidatePath("/admin/approvals")
     return { success: true, data: newUser }
   } catch (e: any) {
     if (e.code === 'P2002') return { success: false, error: "Email ini sudah terdaftar." }
+    if (e.code === 'P2025') return { success: false, error: "Data Master (Lokasi/Status) yang dipilih tidak ditemukan. Mohon refresh halaman dan coba lagi." }
     return { success: false, error: e.message || "Gagal membuat profil alumni." }
   }
 }
 
 export async function getAlumniDetails(userId: string) {
   try {
+    const session = await getServerSession(authOptions);
+    const role = session?.user?.role || "ALUMNI";
+    const currentUserId = session?.user?.id;
+
     const user = await prisma.user.findUnique({
       where: { id: userId },
       include: { 
@@ -216,7 +189,17 @@ export async function getAlumniDetails(userId: string) {
         } 
       }
     })
+    
     if (!user) return { success: false, error: "Alumni tidak ditemukan" }
+
+    // ALUMNI role can only view details of their own gender, except if viewing their own profile
+    if (role === "ALUMNI" && currentUserId && currentUserId !== userId) {
+      const currentUserProfile = await prisma.alumniProfile.findUnique({ where: { userId: currentUserId } });
+      if (currentUserProfile && user.profile && currentUserProfile.isMale !== user.profile.isMale) {
+        return { success: false, error: "Tidak memiliki akses untuk melihat profil ini." };
+      }
+    }
+
     return { success: true, data: user }
   } catch (error: any) {
     return { success: false, error: error.message }
@@ -264,35 +247,36 @@ export async function updateFullAlumni(userId: string, data: any) {
         data: {
           fullName: data.fullName,
           phoneNumber: data.phoneNumber || null,
-          maritalStatusId: data.maritalStatusId || null,
+          maritalStatus: data.maritalStatusId ? { connect: { id: data.maritalStatusId } } : { disconnect: true },
           citizenship: data.citizenship || null,
+          isMale: data.isMale !== undefined ? data.isMale : true,
           startYear: data.startYear ? parseInt(data.startYear) : null,
           graduationYear: data.graduationYear || null,
           highestEducation: data.highestEducation || null,
-          entryLevelId: data.entryLevelId || null,
-          graduationStatusId: data.graduationStatusId || null,
+          entryLevel: data.entryLevelId ? { connect: { id: data.entryLevelId } } : { disconnect: true },
+          graduationStatus: data.graduationStatusId ? { connect: { id: data.graduationStatusId } } : { disconnect: true },
           domicileType: data.domicileType || null,
-          provinceId: data.provinceId || null,
+          province: data.provinceId ? { connect: { id: data.provinceId } } : undefined,
           provinceName: data.provinceName || null,
-          cityId: data.cityId || null,
+          city: data.cityId ? { connect: { id: data.cityId } } : undefined,
           cityName: data.cityName || null,
-          countryId: data.countryId || null,
+          country: data.countryId ? { connect: { id: data.countryId } } : undefined,
           countryName: data.countryName || null,
-          stateId: data.stateId || null,
+          state: data.stateId ? { connect: { id: data.stateId } } : undefined,
           stateName: data.stateName || null,
           activityStatus: data.activityStatus || null,
           collegeDomicileType: data.collegeDomicileType || null,
-          collegeLevelId: data.collegeLevelId || null,
-          universityId: data.universityId || null,
+          collegeLevel: data.collegeLevelId ? { connect: { id: data.collegeLevelId } } : { disconnect: true },
+          university: data.universityId ? { connect: { id: data.universityId } } : { disconnect: true },
           otherUniversity: data.otherUniversity || null,
-          majorId: data.majorId || null,
+          major: data.majorId ? { connect: { id: data.majorId } } : { disconnect: true },
           otherMajor: data.otherMajor || null,
-          collegeStatusId: data.collegeStatusId || null,
+          collegeStatus: data.collegeStatusId ? { connect: { id: data.collegeStatusId } } : { disconnect: true },
           companyName: data.companyName || null,
-          jobStatusId: data.jobStatusId || null,
+          jobStatus: data.jobStatusId ? { connect: { id: data.jobStatusId } } : { disconnect: true },
           jobPosition: data.jobPosition || null,
           status: "APPROVED" // Reset to approved on direct update
-        }
+        } as any
       });
       
       await prisma.auditLog.create({
@@ -313,39 +297,40 @@ export async function updateFullAlumni(userId: string, data: any) {
 
       await prisma.profileRevision.create({
         data: {
-          profileId: currentProfileId!,
-          userId: userId,
+          profile: { connect: { id: currentProfileId! } },
+          user: { connect: { id: userId } },
           status: "WAITING",
           fullName: data.fullName,
           phoneNumber: data.phoneNumber || null,
-          maritalStatusId: data.maritalStatusId || null,
+          maritalStatus: data.maritalStatusId ? { connect: { id: data.maritalStatusId } } : undefined,
           citizenship: data.citizenship || null,
+          isMale: data.isMale !== undefined ? data.isMale : true,
           startYear: data.startYear ? parseInt(data.startYear) : null,
           graduationYear: data.graduationYear || null,
           highestEducation: data.highestEducation || null,
-          entryLevelId: data.entryLevelId || null,
-          graduationStatusId: data.graduationStatusId || null,
+          entryLevel: data.entryLevelId ? { connect: { id: data.entryLevelId } } : undefined,
+          graduationStatus: data.graduationStatusId ? { connect: { id: data.graduationStatusId } } : undefined,
           domicileType: data.domicileType || null,
-          provinceId: data.provinceId || null,
+          province: data.provinceId ? { connect: { id: data.provinceId } } : undefined,
           provinceName: data.provinceName || null,
-          cityId: data.cityId || null,
+          city: data.cityId ? { connect: { id: data.cityId } } : undefined,
           cityName: data.cityName || null,
-          countryId: data.countryId || null,
+          country: data.countryId ? { connect: { id: data.countryId } } : undefined,
           countryName: data.countryName || null,
-          stateId: data.stateId || null,
+          state: data.stateId ? { connect: { id: data.stateId } } : undefined,
           stateName: data.stateName || null,
           activityStatus: data.activityStatus || null,
           collegeDomicileType: data.collegeDomicileType || null,
-          collegeLevelId: data.collegeLevelId || null,
-          universityId: data.universityId || null,
+          collegeLevel: data.collegeLevelId ? { connect: { id: data.collegeLevelId } } : undefined,
+          university: data.universityId ? { connect: { id: data.universityId } } : undefined,
           otherUniversity: data.otherUniversity || null,
-          majorId: data.majorId || null,
+          major: data.majorId ? { connect: { id: data.majorId } } : undefined,
           otherMajor: data.otherMajor || null,
-          collegeStatusId: data.collegeStatusId || null,
+          collegeStatus: data.collegeStatusId ? { connect: { id: data.collegeStatusId } } : undefined,
           companyName: data.companyName || null,
-          jobStatusId: data.jobStatusId || null,
+          jobStatus: data.jobStatusId ? { connect: { id: data.jobStatusId } } : undefined,
           jobPosition: data.jobPosition || null,
-        }
+        } as any
       });
 
       // Notify Admins
@@ -362,6 +347,7 @@ export async function updateFullAlumni(userId: string, data: any) {
     revalidatePath("/admin/approvals")
     return { success: true }
   } catch (error: any) {
+    if (error.code === 'P2025') return { success: false, error: "Gagal memperbarui: Data Master (Lokasi/Status) tidak ditemukan. Pastikan data seeder sudah selesai." }
     return { success: false, error: error.message || "Gagal memperbarui profil alumni." }
   }
 }

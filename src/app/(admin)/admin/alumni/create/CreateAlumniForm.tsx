@@ -3,9 +3,10 @@
 import { useState, useEffect } from "react"
 import { useRouter } from "next/navigation"
 import { createFullAlumni } from "@/core/actions/alumni"
-import { getProvinces, getRegencies, getCountries, getStates } from "@/core/actions/location"
+import { getMasterData } from "@/core/actions/master-data"
 import { AlertCircle, Save, Loader2 } from "lucide-react"
 import { useLanguage } from "@/components/Providers"
+import { Category } from "@prisma/client"
 
 type Option = { value: string; label: string }
 type OptionsDict = Record<string, Option[]>
@@ -16,18 +17,18 @@ export default function CreateAlumniForm({ options }: { options: OptionsDict }) 
   const [loading, setLoading] = useState(false)
   const [errorMsg, setErrorMsg] = useState("")
 
-  const [provinces, setProvinces] = useState<{code: string; name: string}[]>([])
-  const [cities, setCities] = useState<{code: string; name: string}[]>([])
-  const [countries, setCountries] = useState<{id: string | number; name: string}[]>([])
-  const [states, setStates] = useState<{id: string | number; name: string}[]>([])
+  const [provinces] = useState<Option[]>(options.PROVINCE || [])
+  const [cities, setCities] = useState<Option[]>([])
+  const [countries] = useState<Option[]>(options.COUNTRY || [])
+  const [states, setStates] = useState<Option[]>([])
   
   const [fetchLoading, setFetchLoading] = useState({ 
-    provinces: false, cities: false, countries: false, states: false 
+    cities: false, states: false 
   })
 
   const [formData, setFormData] = useState<any>({
     email: "", fullName: "", phoneNumber: "", citizenship: "",
-    maritalStatusId: "", startYear: "", graduationYear: "",
+    maritalStatusId: "", isMale: true, startYear: "", graduationYear: "",
     highestEducation: "", entryLevelId: "", graduationStatusId: "",
     domicileType: "DOMESTIC", 
     provinceId: "", provinceName: "", cityId: "", cityName: "", 
@@ -39,37 +40,30 @@ export default function CreateAlumniForm({ options }: { options: OptionsDict }) 
   })
 
   useEffect(() => {
-    const fetchInitialData = async () => {
-      setFetchLoading(prev => ({ ...prev, provinces: true, countries: true }))
-      const [provRes, countryRes] = await Promise.all([getProvinces(), getCountries()])
-      if (provRes.success) setProvinces(provRes.data)
-      if (countryRes.success) setCountries(countryRes.data)
-      setFetchLoading(prev => ({ ...prev, provinces: false, countries: false }))
-    }
-    fetchInitialData()
-  }, [])
-
-  useEffect(() => {
     if (!formData.provinceId || formData.domicileType !== "DOMESTIC") { setCities([]); return }
     const fetchCities = async () => {
       setFetchLoading(prev => ({ ...prev, cities: true }))
-      const res = await getRegencies(formData.provinceId)
-      if (res.success) setCities(res.data)
+      const res = await getMasterData(Category.CITY, formData.provinceName)
+      if (res.success) {
+        setCities(res.data.map((c: any) => ({ value: c.id, label: c.name })))
+      }
       setFetchLoading(prev => ({ ...prev, cities: false }))
     }
     fetchCities()
-  }, [formData.provinceId, formData.domicileType])
+  }, [formData.provinceId, formData.provinceName, formData.domicileType])
 
   useEffect(() => {
     if (!formData.countryId || formData.domicileType !== "FOREIGN") { setStates([]); return }
     const fetchStates = async () => {
       setFetchLoading(prev => ({ ...prev, states: true }))
-      const res = await getStates(formData.countryId)
-      if (res.success) setStates(res.data)
+      const res = await getMasterData(Category.STATE, formData.countryName)
+      if (res.success) {
+        setStates(res.data.map((s: any) => ({ value: s.id, label: s.name })))
+      }
       setFetchLoading(prev => ({ ...prev, states: false }))
     }
     fetchStates()
-  }, [formData.countryId, formData.domicileType])
+  }, [formData.countryId, formData.countryName, formData.domicileType])
 
   const currentYear = new Date().getFullYear()
   const startYearOptions = Array.from({ length: currentYear - 2013 + 1 }, (_, i) => currentYear - i)
@@ -80,17 +74,17 @@ export default function CreateAlumniForm({ options }: { options: OptionsDict }) 
     if (name === "domicileType") {
       setFormData({ ...formData, domicileType: value, provinceId: "", provinceName: "", cityId: "", cityName: "", countryId: "", countryName: "", stateId: "", stateName: "" })
     } else if (name === "provinceId") {
-      const selected = provinces.find(p => p.code === value)
-      setFormData({ ...formData, provinceId: value, provinceName: selected ? selected.name : "", cityId: "", cityName: "" })
+      const selected = provinces.find(p => p.value === value)
+      setFormData({ ...formData, provinceId: value, provinceName: selected ? selected.label : "", cityId: "", cityName: "" })
     } else if (name === "cityId") {
-      const selected = cities.find(c => c.code === value)
-      setFormData({ ...formData, cityId: value, cityName: selected ? selected.name : "" })
+      const selected = cities.find(c => c.value === value)
+      setFormData({ ...formData, cityId: value, cityName: selected ? selected.label : "" })
     } else if (name === "countryId") {
-      const selected = countries.find(c => String(c.id) === value)
-      setFormData({ ...formData, countryId: value, countryName: selected ? selected.name : "", stateId: "", stateName: "" })
+      const selected = countries.find(c => c.value === value)
+      setFormData({ ...formData, countryId: value, countryName: selected ? selected.label : "", stateId: "", stateName: "" })
     } else if (name === "stateId") {
-      const selected = states.find(s => String(s.id) === value)
-      setFormData({ ...formData, stateId: value, stateName: selected ? selected.name : "" })
+      const selected = states.find(s => s.value === value)
+      setFormData({ ...formData, stateId: value, stateName: selected ? selected.label : "" })
     } else {
       setFormData({ ...formData, [name]: value })
     }
@@ -152,6 +146,13 @@ export default function CreateAlumniForm({ options }: { options: OptionsDict }) 
             <select required name="maritalStatusId" value={formData.maritalStatusId} onChange={handleChange} className={sel}>
               <option value="">-- {t("search")} --</option>
               {(options.MARITAL_STATUS || []).map(opt => <option key={opt.value} value={opt.value}>{opt.label}</option>)}
+            </select>
+          </div>
+          <div>
+            <label className={lbl}>{lang === "id" ? "Jenis Kelamin" : "Gender"} *</label>
+            <select required name="isMale" value={formData.isMale ? "true" : "false"} onChange={(e) => setFormData({...formData, isMale: e.target.value === "true"})} className={inp}>
+              <option value="true">{lang === "id" ? "Putra (Laki-laki)" : "Male"}</option>
+              <option value="false">{lang === "id" ? "Putri (Perempuan)" : "Female"}</option>
             </select>
           </div>
         </div>
@@ -224,11 +225,11 @@ export default function CreateAlumniForm({ options }: { options: OptionsDict }) 
             <>
               <div>
                 <label className={`${lbl} flex justify-between`}>
-                  {t("province")} * {fetchLoading.provinces && <Loader2 size={12} className="animate-spin" />}
+                  {t("province")} *
                 </label>
                 <select required name="provinceId" value={formData.provinceId} onChange={handleChange} className={sel}>
                   <option value="">-- {lang === "id" ? "Pilih Provinsi" : "Select Province"} --</option>
-                  {provinces.map(p => <option key={p.code} value={p.code}>{p.name}</option>)}
+                  {provinces.map(p => <option key={p.value} value={p.value}>{p.label}</option>)}
                 </select>
               </div>
               <div>
@@ -237,7 +238,7 @@ export default function CreateAlumniForm({ options }: { options: OptionsDict }) 
                 </label>
                 <select required name="cityId" value={formData.cityId} onChange={handleChange} className={sel} disabled={!formData.provinceId}>
                   <option value="">-- {formData.provinceId ? (lang === "id" ? "Pilih Kota" : "Select City") : (lang === "id" ? "Pilih Provinsi Dulu" : "Select Province First")} --</option>
-                  {cities.map(c => <option key={c.code} value={c.code}>{c.name}</option>)}
+                  {cities.map(c => <option key={c.value} value={c.value}>{c.label}</option>)}
                 </select>
               </div>
             </>
@@ -245,11 +246,11 @@ export default function CreateAlumniForm({ options }: { options: OptionsDict }) 
             <>
               <div>
                 <label className={`${lbl} flex justify-between`}>
-                  {t("country")} * {fetchLoading.countries && <Loader2 size={12} className="animate-spin" />}
+                  {t("country")} *
                 </label>
                 <select required name="countryId" value={formData.countryId} onChange={handleChange} className={sel}>
                   <option value="">-- {lang === "id" ? "Pilih Negara" : "Select Country"} --</option>
-                  {countries.map(c => <option key={c.id} value={c.id}>{c.name}</option>)}
+                  {countries.map(c => <option key={c.value} value={c.value}>{c.label}</option>)}
                 </select>
               </div>
               <div>
@@ -258,7 +259,7 @@ export default function CreateAlumniForm({ options }: { options: OptionsDict }) 
                 </label>
                 <select required name="stateId" value={formData.stateId} onChange={handleChange} className={sel} disabled={!formData.countryId}>
                   <option value="">-- {formData.countryId ? (lang === "id" ? "Pilih Wilayah" : "Select Region") : (lang === "id" ? "Pilih Negara Dulu" : "Select Country First")} --</option>
-                  {states.map(s => <option key={s.id} value={s.id}>{s.name}</option>)}
+                  {states.map(s => <option key={s.value} value={s.value}>{s.label}</option>)}
                 </select>
               </div>
             </>
@@ -277,7 +278,6 @@ export default function CreateAlumniForm({ options }: { options: OptionsDict }) 
             <option value="COLLEGE">{t("college")}</option>
             <option value="WORKING">{t("working")}</option>
             <option value="COLLEGE_AND_WORKING">{t("college_and_working")}</option>
-            <option value="GRADUATED_AND_WORKING">{t("graduated_and_working")}</option>
           </select>
         </div>
 
@@ -323,7 +323,7 @@ export default function CreateAlumniForm({ options }: { options: OptionsDict }) 
           </div>
         )}
 
-        {(formData.activityStatus === "WORKING" || formData.activityStatus === "COLLEGE_AND_WORKING" || formData.activityStatus === "GRADUATED_AND_WORKING") && (
+        {(formData.activityStatus === "WORKING" || formData.activityStatus === "COLLEGE_AND_WORKING") && (
           <div className="mt-6 border border-zinc-100 dark:border-zinc-800 rounded-2xl p-6 bg-white/50 dark:bg-zinc-900/50">
             <h3 className="font-semibold text-sm mb-4 text-emerald-600">{lang === "id" ? "Detail Pekerjaan" : "Work Details"}</h3>
             <div className="grid grid-cols-1 md:grid-cols-2 gap-4">

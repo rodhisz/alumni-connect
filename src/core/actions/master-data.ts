@@ -4,12 +4,15 @@ import prisma from "@/lib/prisma"
 import { revalidatePath } from "next/cache"
 import { Category } from "@prisma/client"
 
-export async function getMasterData(category?: Category) {
+export async function getMasterData(category?: Category, description?: string) {
   try {
     const data = await prisma.masterData.findMany({
-      where: category ? { category } : undefined,
+      where: {
+        category: category || undefined,
+        description: description || undefined,
+        isActive: true,
+      },
       orderBy: [
-        { category: 'asc' },
         { order: 'asc' },
         { name: 'asc' }
       ]

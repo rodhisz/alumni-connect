@@ -1,9 +1,8 @@
-import { PrismaClient, Category } from "@prisma/client"
-import * as fs from 'fs'
-import * as path from 'path'
+import { PrismaClient, UserRole, ApprovalStatus, ActivityStatus, DomisiliType, HighestEducation, Category } from "@prisma/client"
 import { config } from "dotenv"
 import { Pool } from 'pg'
 import { PrismaPg } from '@prisma/adapter-pg'
+import bcrypt from "bcryptjs"
 
 config()
 
@@ -12,203 +11,169 @@ const pool = new Pool({ connectionString })
 const adapter = new PrismaPg(pool)
 const prisma = new PrismaClient({ adapter })
 
+const FIRST_NAMES = ["Andi", "Budi", "Citra", "Diana", "Eko", "Fajri", "Gita", "Hana", "Indra", "Joko", "Kurnia", "Lestari", "Maya", "Novi", "Oscar", "Putra", "Rina", "Santi", "Taufik", "Utami", "Vino", "Wati", "Yanto", "Zaki"]
+const LAST_NAMES = ["Saputra", "Wibowo", "Lestari", "Hidayat", "Pratama", "Kusuma", "Santoso", "Sari", "Wijaya", "Purnama", "Setiawan", "Ramadhan", "Fitriani", "Nugroho"]
+
+function getRandom(arr: any[]) {
+  return arr[Math.floor(Math.random() * arr.length)]
+}
+
+function toTitleCase(str: string) {
+  return str.replace(/\w\S*/g, (txt) => txt.charAt(0).toUpperCase() + txt.substr(1).toLowerCase());
+}
+
 async function main() {
-  console.log("Starting seed...")
+  console.log("🚀 Starting API-Integrated Seed...")
 
-  // 1. Marital Status
-  const maritalStatuses = ["Kawin", "Belum Kawin", "Cerai Hidup", "Cerai Mati"]
-  for (const name of maritalStatuses) {
-    await prisma.masterData.upsert({
-      where: { id: `marital-${name.toLowerCase().replace(/\s+/g, '-')}` },
-      update: {},
-      create: {
-        id: `marital-${name.toLowerCase().replace(/\s+/g, '-')}`,
-        category: "MARITAL_STATUS",
-        name,
-        isActive: true
+  async function safeUpsertMaster(category: Category, name: string) {
+    return await prisma.masterData.upsert({
+      where: { category_name: { category, name } },
+      update: { isActive: true },
+      create: { 
+        category, 
+        name, 
+        isActive: true,
+        id: `${category.toLowerCase()}-${name.toLowerCase().slice(0, 20).replace(/[^a-z0-9]/g, '-')}` 
       }
     })
   }
 
-  // 2. Citizenship
-  const citizenships = ["Warga Negara Indonesia", "Warga Negara Asing"]
-  for (const name of citizenships) {
-    await prisma.masterData.upsert({
-      where: { id: `cit-${name.toLowerCase().replace(/\s+/g, '-')}` },
-      update: {},
-      create: {
-        id: `cit-${name.toLowerCase().replace(/\s+/g, '-')}`,
-        category: "CITIZENSHIP", // Fixed category
-        // Looking at schema.prisma line 75, it's not there.
-        // It's used as a string in AlumniProfile.citizenship.
-        // But the user said "(A). Data pribadi ... kewarganegaraan (Opsi : Warga Negara Indonesia/Warga Negara Asing)"
-        // Since it's not in the Category enum, I'll Skip seeding it as MasterData and use it as options in frontend later.
-        name,
-        isActive: true
-      }
-    })
-  }
-  // Cleaning up my mistake above: citizenships are not in Category enum.
-  // I will only seed what's in the Enum.
+  // --- 1. Master Data ---
+  console.log("📦 Seeding Master Data...")
+  const maritalIds = []
+  for (const n of ["Kawin", "Belum Kawin", "Cerai Hidup"]) maritalIds.push((await safeUpsertMaster("MARITAL_STATUS", n)).id)
 
-  // 3. College Level
-  const collegeLevels = ["D1", "D2", "D3", "D4", "S1", "S2", "S3", "Pendidikan Profesional / Sertifikasi Profesional / Setara"]
-  for (const name of collegeLevels) {
-    await prisma.masterData.upsert({
-      where: { id: `college-lvl-${name.toLowerCase().slice(0, 10).replace(/\s+/g, '-')}` },
-      update: {},
-      create: {
-        id: `college-lvl-${name.toLowerCase().slice(0, 10).replace(/\s+/g, '-')}`,
-        category: "COLLEGE_LEVEL",
-        name,
-        isActive: true
-      }
-    })
-  }
+  const collegeLvlIds = []
+  for (const n of ["D3", "S1", "S2", "S3"]) collegeLvlIds.push((await safeUpsertMaster("COLLEGE_LEVEL", n)).id)
 
-  // 4. College Status
-  const collegeStatuses = ["Lulus", "Sedang Berkuliah"]
-  for (const name of collegeStatuses) {
-    await prisma.masterData.upsert({
-      where: { id: `college-stat-${name.toLowerCase().replace(/\s+/g, '-')}` },
-      update: {},
-      create: {
-        id: `college-stat-${name.toLowerCase().replace(/\s+/g, '-')}`,
-        category: "COLLEGE_STATUS",
-        name,
-        isActive: true
-      }
-    })
+  const collegeStatIds = []
+  for (const n of ["Lulus", "Sedang Berkuliah"]) collegeStatIds.push((await safeUpsertMaster("COLLEGE_STATUS", n)).id)
+
+  const entryLvlIds = []
+  for (const n of ["SMP", "SMA"]) entryLvlIds.push((await safeUpsertMaster("ENTRY_LEVEL", n)).id)
+
+  const jobStatIds = []
+  for (const n of ["Karyawan Tetap", "Kontrak", "Freelance", "Wirausaha"]) jobStatIds.push((await safeUpsertMaster("JOB_STATUS", n)).id)
+
+  const univIds = []
+  for (const n of ["UI", "ITB", "UGM", "NTU", "Harvard", "Oxford"]) univIds.push((await safeUpsertMaster("UNIVERSITY", n)).id)
+
+  const majorIds = []
+  for (const n of ["Informatika", "Manajemen", "Kedokteran", "Psikologi", "Akuntansi", "DKV"]) majorIds.push((await safeUpsertMaster("COLLEGE_MAJOR", n)).id)
+
+  const gradStatId = (await safeUpsertMaster("GRADUATION_STATUS", "Lulus SMA")).id
+
+  // --- 2. Fetch Locations from API ---
+  console.log("🌍 Fetching Provinces and Countries from API...")
+  let apiProvinces: any[] = []
+  let apiCountries: any[] = []
+
+  try {
+    const pRes = await fetch("https://wilayah.id/api/provinces.json")
+    const pJson = await pRes.json()
+    apiProvinces = pJson.data || []
+  } catch (e) {
+    console.error("Failed to fetch provinces, using fallback")
+    apiProvinces = [{ code: "31", name: "DKI JAKARTA" }, { code: "32", name: "JAWA BARAT" }]
   }
 
-  // 5. Entry Level (School)
-  const entryLevels = ["SMP", "SMA"]
-  for (const name of entryLevels) {
-    await prisma.masterData.upsert({
-      where: { id: `entry-${name.toLowerCase()}` },
-      update: {},
-      create: {
-        id: `entry-${name.toLowerCase()}`,
-        category: "ENTRY_LEVEL",
-        name,
-        isActive: true
-      }
-    })
+  try {
+    const cRes = await fetch("https://countriesnow.space/api/v0.1/countries/iso")
+    const cJson = await cRes.json()
+    apiCountries = cJson.data || []
+  } catch (e) {
+    console.error("Failed to fetch countries, using fallback")
+    apiCountries = [{ name: "Japan" }, { name: "United States" }]
   }
 
-  // 6. Graduation Status (School)
-  const gradStatuses = ["Lulus SMP", "Lulus SMA", "Tidak Lulus (Keluar/Pindah)"]
-  for (const name of gradStatuses) {
-    await prisma.masterData.upsert({
-      where: { id: `grad-stat-${name.toLowerCase().slice(0, 15).replace(/\s+/g, '-')}` },
-      update: {},
-      create: {
-        id: `grad-stat-${name.toLowerCase().slice(0, 15).replace(/\s+/g, '-')}`,
-        category: "GRADUATION_STATUS",
-        name,
-        isActive: true
-      }
-    })
-  }
-
-  // 7. Job Status
-  const jobStatuses = ["Karyawan Tetap", "Kontrak", "Freelance", "Wirausaha (Pemilik Bisnis)", "Tidak Bekerja"]
-  for (const name of jobStatuses) {
-    await prisma.masterData.upsert({
-      where: { id: `job-stat-${name.toLowerCase().slice(0, 15).replace(/\s+/g, '-')}` },
-      update: {},
-      create: {
-        id: `job-stat-${name.toLowerCase().slice(0, 15).replace(/\s+/g, '-')}`,
-        category: "JOB_STATUS",
-        name,
-        isActive: true
-      }
-    })
-  }
-
-  // 8. Provinces & Cities (Domestic)
-  const provinces = [
-    "Aceh", "Bali", "Banten", "Bengkulu", "DI Yogyakarta", "DKI Jakarta", "Gorontalo", "Jambi", "Jawa Barat", "Jawa Tengah", "Jawa Timur", "Kalimantan Barat", "Kalimantan Selatan", "Kalimantan Tengah", "Kalimantan Timur", "Kalimantan Utara", "Kepulauan Bangka Belitung", "Kepulauan Riau", "Lampung", "Maluku", "Maluku Utara", "Nusa Tenggara Barat", "Nusa Tenggara Timur", "Papua", "Papua Barat", "Papua Pegunungan", "Papua Selatan", "Papua Tengah", "Riau", "Sulawesi Barat", "Sulawesi Selatan", "Sulawesi Tengah", "Sulawesi Tenggara", "Sulawesi Utara", "Sumatera Barat", "Sumatera Selatan", "Sumatera Utara"
+  // --- 3. Site Settings ---
+  console.log("⚙️ Seeding Site Settings...")
+  const settings = [
+    { key: "site_name", value: "Alumni Connect" },
+    { key: "home_app_name", value: "Alumni Connect" },
+    { key: "site_description", value: "Platform resmi kolaborasi dan silaturahmi seluruh alumni." },
+    { key: "theme_color", value: "#10b981" },
   ]
-  for (const name of provinces) {
-    await prisma.masterData.upsert({
-      where: { id: `prov-${name.toLowerCase().replace(/\s+/g, '-')}` },
-      update: {},
-      create: {
-        id: `prov-${name.toLowerCase().replace(/\s+/g, '-')}`,
-        category: "DOMESTIC_PROVINCE",
-        name,
-        isActive: true
-      }
+  for (const s of settings) {
+    await prisma.siteSetting.upsert({
+      where: { key: s.key },
+      update: { value: s.value },
+      create: { key: s.key, value: s.value }
     })
   }
 
-  // Sample Cities for some provinces
-  const sampleCities = [
-    { province: "DKI Jakarta", cities: ["Jakarta Pusat", "Jakarta Barat", "Jakarta Timur", "Jakarta Selatan", "Jakarta Utara"] },
-    { province: "Jawa Barat", cities: ["Bandung", "Bogor", "Depok", "Bekasi", "Tangerang"] },
-    { province: "Jawa Timur", cities: ["Surabaya", "Malang", "Sidoarjo"] }
+  // --- 4. Dashboard Widgets ---
+  const widgets = [
+    { name: "Total Alumni", chartType: "number", sqlQuery: "SELECT COUNT(*) as value FROM \"AlumniProfile\" WHERE status = 'APPROVED'", order: 1 },
+    { name: "Working Alumni", chartType: "number", sqlQuery: "SELECT COUNT(*) as value FROM \"AlumniProfile\" WHERE \"activityStatus\" IN ('WORKING', 'COLLEGE_AND_WORKING') AND status = 'APPROVED'", order: 2 },
+    { name: "Continuing Studies", chartType: "number", sqlQuery: "SELECT COUNT(*) as value FROM \"AlumniProfile\" WHERE \"activityStatus\" IN ('COLLEGE', 'COLLEGE_AND_WORKING') AND status = 'APPROVED'", order: 3 },
+    { name: "Locations", chartType: "number", sqlQuery: "SELECT COUNT(DISTINCT \"provinceName\") + COUNT(DISTINCT \"countryName\") as value FROM \"AlumniProfile\" WHERE status = 'APPROVED'", order: 4 },
   ]
-  for (const item of sampleCities) {
-    for (const city of item.cities) {
-        await prisma.masterData.upsert({
-            where: { id: `city-${city.toLowerCase().replace(/\s+/g, '-')}` },
-            update: {},
-            create: {
-                id: `city-${city.toLowerCase().replace(/\s+/g, '-')}`,
-                category: "DOMESTIC_CITY",
-                name: city,
-                description: item.province, // Link back via description for seeding logic
-                isActive: true
-            }
-        })
-    }
-  }
-
-  // 9. Countries & States (Foreign)
-  const countries = ["Indonesia", "Malaysia", "Singapore", "Thailand", "Vietnam", "Japan", "South Korea", "China", "USA", "UK", "Australia"]
-  for (const name of countries) {
-    await prisma.masterData.upsert({
-      where: { id: `country-${name.toLowerCase().replace(/\s+/g, '-')}` },
-      update: {},
-      create: {
-        id: `country-${name.toLowerCase().replace(/\s+/g, '-')}`,
-        category: "FOREIGN_COUNTRY",
-        name,
-        isActive: true
+  for (const w of widgets) {
+    await prisma.dashboardWidget.upsert({
+      where: { id: `widget-${w.name.toLowerCase().replace(/\s/g, '-')}` },
+      update: { sqlQuery: w.sqlQuery, order: w.order },
+      create: { 
+        id: `widget-${w.name.toLowerCase().replace(/\s/g, '-')}`,
+        name: w.name, 
+        chartType: w.chartType, 
+        sqlQuery: w.sqlQuery, 
+        order: w.order, 
+        isActive: true 
       }
     })
   }
 
-  // 10. Majors (Program Studi) from Kaggle
-  const kagglePath = path.join(process.cwd(), 'prisma', 'university_data.json')
-  if (fs.existsSync(kagglePath)) {
-    const rawData = fs.readFileSync(kagglePath, 'utf8')
-    const jsonData = JSON.parse(rawData)
-    
-    // The columns might be 'PTN' and 'Program Studi'
-    const majors = new Set<string>()
-    jsonData.forEach((item: any) => {
-        const major = item['Program Studi'] || item['program_studi']
-        if (major) majors.add(major)
-    })
+  // --- 5. Admin User ---
+  const adminPassword = await bcrypt.hash("admin123", 10)
+  const admin = await prisma.user.upsert({
+    where: { email: "admin@alumni.com" },
+    update: {},
+    create: { email: "admin@alumni.com", name: "Super Admin", role: "SUPERUSER", passwordHash: adminPassword }
+  })
 
-    console.log(`Seeding ${majors.size} majors...`)
-    for (const major of Array.from(majors)) {
-        await prisma.masterData.upsert({
-            where: { id: `major-${major.toLowerCase().slice(0, 30).replace(/[^a-z0-9]/g, '-')}` },
-            update: {},
-            create: {
-                id: `major-${major.toLowerCase().slice(0, 30).replace(/[^a-z0-9]/g, '-')}`,
-                category: "COLLEGE_MAJOR",
-                name: major,
-                isActive: true
-            }
-        })
-    }
+  // --- 6. Random Alumni with Realistic Data ---
+  console.log("👥 Seeding 50 Alumni with API locations...")
+  const passwordHash = await bcrypt.hash("admin123", 10)
+  
+  for (let i = 1; i <= 50; i++) {
+    const isDomestic = Math.random() > 0.2
+    const firstName = getRandom(FIRST_NAMES)
+    const lastName = getRandom(LAST_NAMES)
+    const fullName = `${firstName} ${lastName}`
+    const email = `alumni${i}@example.com`
+
+    const user = await prisma.user.upsert({
+      where: { email },
+      update: {},
+      create: { 
+        email, 
+        name: fullName, 
+        role: "ALUMNI", 
+        passwordHash,
+        profile: {
+          create: {
+            fullName,
+            status: "APPROVED",
+            isMale: Math.random() > 0.5,
+            startYear: 2013 + Math.floor(Math.random() * 8),
+            graduationYear: (2018 + Math.floor(Math.random() * 7)).toString(),
+            domicileType: isDomestic ? "DOMESTIC" : "FOREIGN",
+            provinceId: isDomestic ? getRandom(apiProvinces).code : null,
+            provinceName: isDomestic ? toTitleCase(getRandom(apiProvinces).name) : null,
+            countryName: !isDomestic ? getRandom(apiCountries).name : null,
+            activityStatus: getRandom(["WORKING", "COLLEGE", "COLLEGE_AND_WORKING"]),
+            companyName: Math.random() > 0.3 ? "PT. Teknologi Indonesia" : null,
+            jobPosition: Math.random() > 0.3 ? "Software Engineer" : null,
+            universityId: getRandom(univIds),
+            majorId: getRandom(majorIds)
+          }
+        }
+      }
+    })
   }
 
-  console.log("Seed finished successfully.")
+  console.log("✅ Seed finished successfully.")
 }
 
 main()

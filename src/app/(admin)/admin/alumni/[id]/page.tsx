@@ -16,5 +16,5 @@ export default async function AlumniDetailPage({ params }: { params: Promise<{ i
     redirect("/admin/alumni")
   }
 
-  return <AlumniDetailClient id={id} user={user} role={role} />
+  return <AlumniDetailClient id={id} user={user} role={role} currentUserId={session?.user?.id} />
 }

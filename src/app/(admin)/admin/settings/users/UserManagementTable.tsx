@@ -35,7 +35,7 @@ export default function UserManagementTable({ initialResponse }: { initialRespon
     setLoading(true)
     const res = await getAllUsers(p, 10, s)
     if (res.success) {
-      setData(res.data)
+      setData(res.data || [])
       setPagination(res.pagination)
     }
     setLoading(false)

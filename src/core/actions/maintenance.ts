@@ -12,9 +12,14 @@ export async function deleteAllAlumni() {
   }
 
   try {
-    // Delete all users with role ALUMNI (this will cascade to profiles)
+    // Delete all profiles first to ensure clean state
+    await prisma.alumniProfile.deleteMany({})
+    
+    // Delete all users EXCEPT SUPERUSER and ADMIN
     await prisma.user.deleteMany({
-      where: { role: "ALUMNI" }
+      where: { 
+        role: { notIn: ["SUPERUSER", "ADMIN"] }
+      }
     })
     
     revalidatePath("/admin/alumni")

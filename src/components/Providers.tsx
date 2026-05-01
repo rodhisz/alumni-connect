@@ -157,20 +157,21 @@ const translations: Record<Language, Record<string, string>> = {
     registered_today: "Terdaftar Hari Ini",
     recent_activity: "Aktivitas Terkini",
     quick_stats: "Statistik Cepat",
-    domestic: "Domisili Dalam Negeri",
+    domestic_count: "Alumni di Indonesia",
+    locations_reached: "Lokasi Terjangkau",
 
     // Home Page
     explore_now: "Mulai Eksplorasi",
-    hero_title: "Terhubung Kembali.",
-    hero_subtitle_gradient: "Bangun Relasi Global.",
-    hero_description: "Platform manajemen data alumni premium yang aman, interaktif, dan terintegrasi. Jelajahi peta persebaran alumni di seluruh dunia dan perbarui data profil Anda dengan mudah.",
+    hero_title: "Direktori Alumni.",
+    hero_subtitle_gradient: "Jaringan Tanpa Batas.",
+    hero_description: "Temukan rekan sejawat dan pantau persebaran alumni kita di seluruh penjuru dunia. Informasi terkini tentang prestasi dan kegiatan alumni dalam satu platform.",
     verified_system: "Verifikasi Berlapis",
     alumni_activity: "Kegiatan Alumni",
     secure_100: "100% Aman",
     college_work: "Kuliah & Bekerja",
     global_distribution: "Persebaran Global",
     interactive_map: "Peta Interaktif",
-    alumni_registered: "Alumni Terdaftar",
+    alumni_registered: "Komunitas Global",
     manage_data_abcd: "Mengelola Data A, B, C, D",
 
     // User Management
@@ -385,20 +386,21 @@ const translations: Record<Language, Record<string, string>> = {
     registered_today: "Registered Today",
     recent_activity: "Recent Activity",
     quick_stats: "Quick Stats",
-    domestic: "Domestic Domicile",
+    domestic_count: "Alumni in Indonesia",
+    locations_reached: "Locations Reached",
 
     // Home Page
     explore_now: "Start Exploring",
-    hero_title: "Reconnect.",
-    hero_subtitle_gradient: "Build Global Relations.",
-    hero_description: "Premium alumni management platform secured, interactive, and integrated. Explore the distribution of alumni worldwide and update your profile easily.",
+    hero_title: "Alumni Directory.",
+    hero_subtitle_gradient: "Limitless Network.",
+    hero_description: "Discover fellow alumni and track our global presence across the world. Stay updated with the latest alumni achievements and activities in one place.",
     verified_system: "Multi-layered Verification",
     alumni_activity: "Alumni Activity",
     secure_100: "100% Secure",
     college_work: "Study & Work",
     global_distribution: "Global Distribution",
     interactive_map: "Interactive Map",
-    alumni_registered: "Registered Alumni",
+    alumni_registered: "Global Community Alumni",
     manage_data_abcd: "Managing Data A, B, C, D",
 
     // User Management
