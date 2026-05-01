@@ -30,7 +30,7 @@ export async function POST(req: NextRequest) {
   if (widgetId) {
     const widget = await prisma.dashboardWidget.findUnique({ where: { id: widgetId } })
     if (widget) {
-      sqlToRun = widget.useRawQuery ? widget.sqlQuery : generateSqlFromBuilder(widget.builderConfig as any)
+      sqlToRun = (widget.useRawQuery ? widget.sqlQuery : generateSqlFromBuilder(widget.builderConfig as any)) || undefined
     }
   } else if (builderConfig) {
     sqlToRun = generateSqlFromBuilder(builderConfig)

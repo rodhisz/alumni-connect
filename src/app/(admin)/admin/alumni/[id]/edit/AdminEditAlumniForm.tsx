@@ -31,16 +31,16 @@ export default function AdminEditAlumniForm({
 
   const [provinces, setProvinces] = useState<{code: string; name: string}[]>([])
   const [cities, setCities] = useState<{code: string; name: string}[]>([])
-  const [countries, setCountries] = useState<{id: number; name: string}[]>([])
-  const [states, setStates] = useState<{id: number; name: string}[]>([])
+  const [countries, setCountries] = useState<{id: string; name: string}[]>([])
+  const [states, setStates] = useState<{id: string; name: string}[]>([])
   const [fetchLoading, setFetchLoading] = useState({ provinces: false, cities: false, countries: false, states: false })
 
   useEffect(() => {
     const fetchInitialData = async () => {
       setFetchLoading(prev => ({ ...prev, provinces: true, countries: true }))
       const [provRes, countryRes] = await Promise.all([getProvinces(), getCountries()])
-      if (provRes.success) setProvinces(provRes.data)
-      if (countryRes.success) setCountries(countryRes.data)
+      if (provRes.success && provRes.data) setProvinces(provRes.data)
+      if (countryRes.success && countryRes.data) setCountries(countryRes.data)
       setFetchLoading(prev => ({ ...prev, provinces: false, countries: false }))
     }
     fetchInitialData()
@@ -51,7 +51,7 @@ export default function AdminEditAlumniForm({
     const fetchCities = async () => {
       setFetchLoading(prev => ({ ...prev, cities: true }))
       const res = await getRegencies(formData.provinceId)
-      if (res.success) setCities(res.data)
+      if (res.success && res.data) setCities(res.data)
       setFetchLoading(prev => ({ ...prev, cities: false }))
     }
     fetchCities()
@@ -62,7 +62,7 @@ export default function AdminEditAlumniForm({
     const fetchStates = async () => {
       setFetchLoading(prev => ({ ...prev, states: true }))
       const res = await getStates(formData.countryId)
-      if (res.success) setStates(res.data)
+      if (res.success && res.data) setStates(res.data)
       setFetchLoading(prev => ({ ...prev, states: false }))
     }
     fetchStates()

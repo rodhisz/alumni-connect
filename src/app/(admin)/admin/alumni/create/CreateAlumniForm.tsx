@@ -44,7 +44,7 @@ export default function CreateAlumniForm({ options }: { options: OptionsDict }) 
     const fetchCities = async () => {
       setFetchLoading(prev => ({ ...prev, cities: true }))
       const res = await getMasterData(Category.CITY, formData.provinceName)
-      if (res.success) {
+      if (res.success && res.data) {
         setCities(res.data.map((c: any) => ({ value: c.id, label: c.name })))
       }
       setFetchLoading(prev => ({ ...prev, cities: false }))
@@ -57,7 +57,7 @@ export default function CreateAlumniForm({ options }: { options: OptionsDict }) 
     const fetchStates = async () => {
       setFetchLoading(prev => ({ ...prev, states: true }))
       const res = await getMasterData(Category.STATE, formData.countryName)
-      if (res.success) {
+      if (res.success && res.data) {
         setStates(res.data.map((s: any) => ({ value: s.id, label: s.name })))
       }
       setFetchLoading(prev => ({ ...prev, states: false }))
