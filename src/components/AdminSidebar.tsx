@@ -1,8 +1,9 @@
 "use client"
 
+import { useState } from "react"
 import Link from "next/link"
 import { usePathname } from "next/navigation"
-import { Users, Database, LayoutDashboard, Settings, UserCog, CheckSquare, ShieldCheck, AlertTriangle, Newspaper } from "lucide-react"
+import { Users, Database, LayoutDashboard, Settings, UserCog, CheckSquare, ShieldCheck, AlertTriangle, Newspaper, Menu, X } from "lucide-react"
 import { useLanguage } from "./Providers"
 import SidebarToggles from "./SidebarToggles"
 import SignOutButton from "./SignOutButton"
@@ -14,6 +15,7 @@ interface SidebarProps {
 }
 
 export default function AdminSidebar({ session, role }: SidebarProps) {
+  const [isOpen, setIsOpen] = useState(false)
   const { t, lang } = useLanguage()
   const pathname = usePathname()
   const menuItems = [
@@ -41,24 +43,60 @@ export default function AdminSidebar({ session, role }: SidebarProps) {
   const isActive = (href: string) => pathname === href || pathname?.startsWith(href + "/")
 
   return (
-    <aside className="w-68 flex flex-col border-r border-zinc-200 dark:border-zinc-800 glass z-10 hidden md:flex">
-      <div className="p-6 pb-2 flex items-center justify-between gap-4">
-        <div className="flex-1 min-w-0">
-          <h2 className="text-xl font-outfit font-bold bg-gradient-to-r from-emerald-500 to-teal-400 bg-clip-text text-transparent">
-            Alumni Connect
-          </h2>
-          <p className="text-[10px] uppercase tracking-widest text-zinc-400 font-bold mt-1 flex items-center gap-2">
-            <span className={`px-1.5 py-0.5 rounded ${
-              role === 'SUPERUSER' ? 'bg-emerald-500/20 text-emerald-600' :
-              role === 'ADMIN' ? 'bg-amber-500/20 text-amber-600' :
-              'bg-zinc-500/20 text-zinc-600'
-            }`}>
-              {role}
-            </span> PORTAL
-          </p>
+    <>
+      {/* Mobile Header */}
+      <div className="md:hidden flex items-center justify-between p-4 border-b border-zinc-200 dark:border-zinc-800 bg-white dark:bg-zinc-950 z-50 sticky top-0">
+        <h2 className="text-xl font-outfit font-bold bg-gradient-to-r from-emerald-500 to-teal-400 bg-clip-text text-transparent">
+          Alumni Connect
+        </h2>
+        <div className="flex items-center gap-3">
+          <NotificationBell />
+          <button onClick={() => setIsOpen(!isOpen)} className="p-2 bg-zinc-100 dark:bg-zinc-800 text-zinc-600 dark:text-zinc-400 rounded-lg">
+            {isOpen ? <X size={20} /> : <Menu size={20} />}
+          </button>
         </div>
-        <NotificationBell />
       </div>
+
+      {/* Backdrop for mobile */}
+      {isOpen && (
+        <div 
+          className="fixed inset-0 bg-black/50 z-40 md:hidden" 
+          onClick={() => setIsOpen(false)}
+        />
+      )}
+
+      {/* Sidebar */}
+      <aside className={`fixed md:static inset-y-0 left-0 w-68 flex flex-col border-r border-zinc-200 dark:border-zinc-800 bg-zinc-50 dark:bg-zinc-950 glass z-50 transform transition-transform duration-300 ${isOpen ? "translate-x-0" : "-translate-x-full md:translate-x-0"}`}>
+        <div className="p-6 pb-2 hidden md:flex items-center justify-between gap-4">
+          <div className="flex-1 min-w-0">
+            <h2 className="text-xl font-outfit font-bold bg-gradient-to-r from-emerald-500 to-teal-400 bg-clip-text text-transparent">
+              Alumni Connect
+            </h2>
+            <p className="text-[10px] uppercase tracking-widest text-zinc-400 font-bold mt-1 flex items-center gap-2">
+              <span className={`px-1.5 py-0.5 rounded ${
+                role === 'SUPERUSER' ? 'bg-emerald-500/20 text-emerald-600' :
+                role === 'ADMIN' ? 'bg-amber-500/20 text-amber-600' :
+                'bg-zinc-500/20 text-zinc-600'
+              }`}>
+                {role}
+              </span> PORTAL
+            </p>
+          </div>
+          <NotificationBell />
+        </div>
+
+        {/* Mobile App role badge since header lacks it */}
+        <div className="md:hidden p-6 pb-2">
+           <p className="text-xs uppercase tracking-widest text-zinc-400 font-bold flex items-center gap-2">
+              <span className={`px-1.5 py-0.5 rounded ${
+                role === 'SUPERUSER' ? 'bg-emerald-500/20 text-emerald-600' :
+                role === 'ADMIN' ? 'bg-amber-500/20 text-amber-600' :
+                'bg-zinc-500/20 text-zinc-600'
+              }`}>
+                {role}
+              </span> PORTAL
+            </p>
+        </div>
       
       <nav className="flex-1 px-4 py-4 space-y-1">
         {menuItems.filter(item => item.roles.includes(role)).map((item, i) => (
@@ -108,5 +146,6 @@ export default function AdminSidebar({ session, role }: SidebarProps) {
         <SignOutButton />
       </div>
     </aside>
+    </>
   )
 }

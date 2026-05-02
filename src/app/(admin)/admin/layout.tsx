@@ -14,12 +14,12 @@ export default async function AdminLayout({ children }: { children: React.ReactN
   const role = session?.user?.role || "ALUMNI"
 
   return (
-    <div className="flex h-screen bg-zinc-50 dark:bg-zinc-950">
+    <div className="flex flex-col md:flex-row h-screen bg-zinc-50 dark:bg-zinc-950">
       {/* Sidebar */}
       <AdminSidebar session={session} role={role} />
 
       {/* Main Content */}
-      <main className="flex-1 flex flex-col h-full overflow-hidden relative">
+      <main className="flex-1 flex flex-col h-full overflow-hidden relative max-md:[zoom:0.5]">
         <PageTransition>
           {children}
         </PageTransition>

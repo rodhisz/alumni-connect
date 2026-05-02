@@ -138,7 +138,7 @@ export default function LandingContent({ stats, mapData, news = [], settings = {
               <h2 className="text-4xl font-black">{lang === "id" ? "Wawasan Jaringan Alumni" : "Alumni Network Insights"}</h2>
             </div>
           </div>
-          <div className="grid md:grid-cols-2 lg:grid-cols-4 gap-6">
+          <div className="grid grid-cols-2 md:grid-cols-2 lg:grid-cols-4 gap-4 md:gap-6">
             {widgets.map((widget, idx) => (
               <motion.div
                 key={widget.id}
@@ -156,10 +156,10 @@ export default function LandingContent({ stats, mapData, news = [], settings = {
                     {idx % 2 === 0 ? <Users size={24} /> : <Globe size={24} />}
                   </div>
                   <div className="space-y-1">
-                    <p className="text-5xl font-black tracking-tighter text-zinc-900 dark:text-white">
+                    <p className="text-3xl sm:text-5xl font-black tracking-tighter text-zinc-900 dark:text-white">
                       {typeof widget.value === 'number' ? widget.value.toLocaleString() : widget.value}
                     </p>
-                    <p className="text-xs font-black text-zinc-500 uppercase tracking-widest">{widget.name}</p>
+                    <p className="text-[10px] sm:text-xs font-black text-zinc-500 uppercase tracking-widest leading-tight">{widget.name}</p>
                   </div>
                 </div>
               </motion.div>
@@ -316,7 +316,7 @@ export default function LandingContent({ stats, mapData, news = [], settings = {
                 whileInView={{ opacity: 1, y: 0 }}
                 transition={{ delay: idx * 0.1 }}
                 viewport={{ once: true }}
-                className="group relative glass rounded-[3rem] overflow-hidden border-emerald-500/5 hover:border-emerald-500/20 transition-all flex flex-col h-full shadow-lg"
+                className={`group relative glass rounded-[3rem] overflow-hidden border-emerald-500/5 hover:border-emerald-500/20 transition-all flex-col h-full shadow-lg ${idx >= 3 ? "hidden md:flex" : "flex"}`}
               >
                 <div className="aspect-[16/11] overflow-hidden relative">
                   <img 
@@ -349,6 +349,12 @@ export default function LandingContent({ stats, mapData, news = [], settings = {
                 </div>
               </motion.article>
             ))}
+          </div>
+          
+          <div className="md:hidden flex justify-center pt-6">
+            <Link href="/news" className="px-8 py-4 bg-emerald-500/10 text-emerald-600 dark:text-emerald-400 rounded-2xl font-black uppercase tracking-widest text-xs flex items-center gap-2 active:scale-95 transition-all">
+              {t("all_news")} <ArrowRight size={16} />
+            </Link>
           </div>
         </section>
       )}
