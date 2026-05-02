@@ -6,7 +6,7 @@ import { createFullAlumni } from "@/core/actions/alumni"
 import { getMasterData } from "@/core/actions/master-data"
 import { AlertCircle, Save, Loader2 } from "lucide-react"
 import { useLanguage } from "@/components/Providers"
-import { Category } from "@prisma/client"
+import type { Category } from "@prisma/client"
 
 type Option = { value: string; label: string }
 type OptionsDict = Record<string, Option[]>
@@ -43,7 +43,7 @@ export default function CreateAlumniForm({ options }: { options: OptionsDict }) 
     if (!formData.provinceId || formData.domicileType !== "DOMESTIC") { setCities([]); return }
     const fetchCities = async () => {
       setFetchLoading(prev => ({ ...prev, cities: true }))
-      const res = await getMasterData(Category.CITY, formData.provinceName)
+      const res = await getMasterData("CITY" as Category, formData.provinceName)
       if (res.success && res.data) {
         setCities(res.data.map((c: any) => ({ value: c.id, label: c.name })))
       }
@@ -56,7 +56,7 @@ export default function CreateAlumniForm({ options }: { options: OptionsDict }) 
     if (!formData.countryId || formData.domicileType !== "FOREIGN") { setStates([]); return }
     const fetchStates = async () => {
       setFetchLoading(prev => ({ ...prev, states: true }))
-      const res = await getMasterData(Category.STATE, formData.countryName)
+      const res = await getMasterData("STATE" as Category, formData.countryName)
       if (res.success && res.data) {
         setStates(res.data.map((s: any) => ({ value: s.id, label: s.name })))
       }

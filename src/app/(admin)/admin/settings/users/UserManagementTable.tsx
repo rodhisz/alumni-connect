@@ -4,7 +4,7 @@ import { useState, useEffect, useCallback } from "react"
 import { Search, Key, ShieldCheck, User as UserIcon, Trash2, KeyRound, UserCheck, ChevronLeft, ChevronRight } from "lucide-react"
 import { adminChangePassword, deleteUser, updateUserRole, getAllUsers } from "@/core/actions/users"
 import { useConfirm } from "@/components/ConfirmProvider"
-import { UserRole } from "@prisma/client"
+import type { UserRole } from "@prisma/client"
 import { useLanguage } from "@/components/Providers"
 
 type UserItem = {
