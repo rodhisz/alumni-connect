@@ -2,7 +2,6 @@ import { getMyProfile } from "@/core/actions/portal"
 import { getMasterData } from "@/core/actions/master-data"
 import { redirect } from "next/navigation"
 import EditAlumniForm from "./EditAlumniForm"
-import { Category } from "@prisma/client"
 
 export const dynamic = "force-dynamic"
 
@@ -24,7 +23,7 @@ export default async function EditProfilePage() {
   const options: Record<string, { value: string; label: string }[]> = {}
   
   if (masterData) {
-    masterData.filter(d => d.isActive).forEach(d => {
+    masterData.filter((d: any) => d.isActive).forEach((d: any) => {
       if (!options[d.category]) options[d.category] = []
       options[d.category].push({ value: d.id, label: d.name })
     })

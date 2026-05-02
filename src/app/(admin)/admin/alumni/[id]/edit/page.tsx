@@ -43,7 +43,7 @@ export default async function AdminEditProfilePage({ params }: { params: Promise
   const options: Record<string, { value: string; label: string }[]> = {}
   
   if (masterData) {
-    masterData.filter(d => d.isActive).forEach(d => {
+    masterData.filter((d: any) => d.isActive).forEach((d: any) => {
       if (!options[d.category]) options[d.category] = []
       options[d.category].push({ value: d.id, label: d.name })
     })

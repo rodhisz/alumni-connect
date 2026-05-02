@@ -1,6 +1,5 @@
 import { getMasterData } from "@/core/actions/master-data"
 import CreateAlumniForm from "./CreateAlumniForm"
-import { MasterData } from "@prisma/client"
 import Link from "next/link"
 import { ArrowLeft } from "lucide-react"
 
